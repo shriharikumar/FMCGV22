@@ -1,6 +1,8 @@
 package com.bizsoft.fmcgv2.Tables;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -9,11 +11,12 @@ import java.util.Date;
  * Created by GopiKing on 28-12-2017.
  */
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Sale {
-
 
     Long Id;
     Date SalesDate;
+    Date SODate;
     String RefNo;
     Double ItemAmount;
     Double DiscountAmount;
@@ -26,6 +29,18 @@ public class Sale {
     int LedgerId;
     boolean IsGST;
     int TransactionTypeId;
+
+
+
+    public Date getSODate() {
+        return SODate;
+    }
+
+    public void setSODate(Date SODate) {
+        this.SODate = SODate;
+    }
+
+
 
     public boolean isGST() {
         return IsGST;

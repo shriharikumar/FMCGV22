@@ -20,6 +20,7 @@ import android.widget.Toast;
 
 import com.bizsoft.fmcgv2.adapter.FileMangerAdpater;
 import com.bizsoft.fmcgv2.dataobject.BizFile;
+import com.bizsoft.fmcgv2.dataobject.Store;
 import com.bizsoft.fmcgv2.service.BizUtils;
 
 import java.io.File;
@@ -72,8 +73,11 @@ public class InvoiceListActivity extends AppCompatActivity {
                 bizFile.setFileSize(files[i].getUsableSpace());
                 bizFile.setDetails(files[i]);
                 bizFile.setDate(String.valueOf(files[i].lastModified()));
-                fileList.add(bizFile);
-                allFileList.add(bizFile);
+
+                if(bizFile.getFileName().contains("| "+ Store.getInstance().dealerId)) {
+                    fileList.add(bizFile);
+                    allFileList.add(bizFile);
+                }
                 Log.d("Files", "FileName:" + files[i].getName());
             }
         }

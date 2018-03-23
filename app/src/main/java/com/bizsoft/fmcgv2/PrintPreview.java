@@ -48,7 +48,7 @@ public class PrintPreview extends AppCompatActivity {
     TextView companyId,companyName,companyPhoneNumber,companyAddLine1,companyAddLine2,companyGst,companyMail,companyPostal;
     TextView customerId,customerName,customerPhoneNumber,customerAddLine1,customerAddLine2,customerGst,customerInCharge,customerPostal;
     Customer customer;
-    Company company;
+    static Company company = new Company();
     ListView listView;
     TextView saleId,saleType,saleIdLabel;
     TextView subTotal,gst,grantTotal;
@@ -72,6 +72,7 @@ public class PrintPreview extends AppCompatActivity {
       /*  try
         {
         */
+
         companyId = (TextView) findViewById(R.id.company_id);
         companyName = (TextView) findViewById(R.id.company_name);
         companyPhoneNumber= (TextView) findViewById(R.id.phone_number);
@@ -182,7 +183,7 @@ public class PrintPreview extends AppCompatActivity {
 
             final BizUtils bizUtils = new BizUtils();
             customer = Store.getInstance().customerList.get(Store.getInstance().currentCustomerPosition);
-            getCompany();
+            company = BizUtils.getCompany();
             System.out.println("Customer = "+customer.getLedgerName());
             System.out.println("Company = "+company.getCompanyName());
             System.out.println("sale size = "+customer.getSale().size());
@@ -345,13 +346,11 @@ public class PrintPreview extends AppCompatActivity {
        });
 
     }
-    public Company getCompany()
+    public static Company getCompany()
     {
 
         for(Company company1 : Store.getInstance().companyList) {
-
-            if(company1.getId().equals(Store.getInstance().companyID)) {
-
+            if(company1.getId() == Store.getInstance().companyID) {
                 company  = company1;
                 return company;
             }

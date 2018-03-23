@@ -7,6 +7,7 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.bizsoft.fmcgv2.BTLib.BTIntialize;
 import com.bizsoft.fmcgv2.R;
@@ -95,7 +96,6 @@ public class SalesAdapter extends BaseAdapter {
         double fp = amount - product.getDiscountAmount();
 
         holder.finalPrice.setText(String.valueOf(String.format("%.2f",fp)));
-
 
 
 

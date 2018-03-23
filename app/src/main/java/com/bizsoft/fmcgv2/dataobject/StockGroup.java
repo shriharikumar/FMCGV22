@@ -1,6 +1,7 @@
 package com.bizsoft.fmcgv2.dataobject;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Created by shri on 9/8/17.
@@ -10,12 +11,18 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 public class StockGroup {
 
             String AccountPath;
+    @JsonProperty("Id")
             Long Id;
+    @JsonProperty("StockGroupName")
             String StockGroupName;
+    @JsonProperty("GroupCode")
             String GroupCode;
             String StockGroupNameWithCode;
+    @JsonProperty("CompanyId")
             Long CompanyId;
+    @JsonProperty("UnderGroupId")
             Long UnderGroupId;
+    @JsonProperty("UnderStockGroup")
             String UnderStockGroup;
 
     public String getAccountPath() {
@@ -33,6 +40,7 @@ public class StockGroup {
     public void setId(Long id) {
         Id = id;
     }
+
 
     public String getStockGroupName() {
         return StockGroupName;
@@ -129,12 +137,17 @@ public class StockGroup {
     public void setSale(boolean sale) {
         IsSale = sale;
     }
-
+    @JsonProperty("SubStockGroup")
     String SubStockGroup;
+    @JsonProperty("Company")
             Company Company;
+    @JsonProperty("underStockGroupName")
             String underStockGroupName;
+    @JsonProperty("IsReadOnly")
             boolean IsReadOnly;
+    @JsonProperty("IsEnabled")
             boolean IsEnabled;
+    @JsonProperty("IsPurchase")
             boolean IsPurchase;
 
     public com.bizsoft.fmcgv2.dataobject.Company getCompany() {

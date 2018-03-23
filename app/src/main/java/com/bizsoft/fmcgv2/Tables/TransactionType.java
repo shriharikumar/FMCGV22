@@ -1,18 +1,20 @@
 package com.bizsoft.fmcgv2.Tables;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 /**
  * Created by GopiKing on 28-12-2017.
  */
-
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class TransactionType {
 
-    int Id;
+    double Id;
 
-    public int getId() {
+    public double getId() {
         return Id;
     }
 
-    public void setId(int id) {
+    public void setId(double id) {
         Id = id;
     }
 
@@ -24,5 +26,6 @@ public class TransactionType {
         Type = type;
     }
 
-    String Type;
+    java.lang.String  Type;
+
 }

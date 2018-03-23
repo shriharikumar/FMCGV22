@@ -21,6 +21,15 @@ public class SaleReturn {
     String chequeNo;
 
     String refCode;
+    boolean synced;
+
+    public boolean isSynced() {
+        return synced;
+    }
+
+    public void setSynced(boolean synced) {
+        this.synced = synced;
+    }
 
     public String getRefCode() {
         return refCode;

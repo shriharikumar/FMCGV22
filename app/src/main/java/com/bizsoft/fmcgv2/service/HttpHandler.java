@@ -34,9 +34,19 @@ public class HttpHandler {
     public HttpHandler() {
     }
 
-    public String makeServiceCall(String reqUrl,Map<String, String> params) {
+    public static String makeServiceCall(String reqUrl, Map<String, String> params) {
         String response = null;
         try {
+            if(Store.getInstance().urlType.contains("full")) {
+                Store.getInstance().baseUrl = "http://" + Store.getInstance().domain + "/";
+            }
+            else
+            {
+                Store.getInstance().baseUrl = "http://" + Store.getInstance().domain + "/";
+
+            }
+            System.out.println("Base Url = "+Store.getInstance().baseUrl);
+            System.out.println("Req Url = "+reqUrl);
             URL url = new URL(Store.getInstance().baseUrl+reqUrl);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("POST");
@@ -86,7 +96,7 @@ public class HttpHandler {
         return response;
     }
 
-    private String convertStreamToString(InputStream is) {
+    private static String convertStreamToString(InputStream is) {
         BufferedReader reader = new BufferedReader(new InputStreamReader(is));
         StringBuilder sb = new StringBuilder();
 

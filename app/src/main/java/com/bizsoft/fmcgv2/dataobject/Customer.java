@@ -1,6 +1,9 @@
 package com.bizsoft.fmcgv2.dataobject;
 
+import com.bizsoft.fmcgv2.Tables.SOPending;
+import com.bizsoft.fmcgv2.Tables.SalesOrder;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -18,7 +21,15 @@ public class Customer {
         String AccountName;
         String ACType;
         Double OPBal;
+    @JsonProperty("Logo")
+        Byte[] Logo;
+
+    @JsonProperty("Id")
         Long Id;
+
+
+
+    @JsonProperty("LedgerName")
         String LedgerName;
         String AccountGroup;
         Long AccountGroupId;
@@ -31,6 +42,24 @@ public class Customer {
         String GSTNo;
         String EMailId;
         String CreditAmount;
+
+        ArrayList<SalesOrder> sOPendingList = new ArrayList<SalesOrder>();
+
+
+
+    @JsonProperty("LedgerId")
+    int ledgerId;
+
+
+
+
+    public ArrayList<SalesOrder> getsOPendingList() {
+        return sOPendingList;
+    }
+
+    public void setsOPendingList(ArrayList<SalesOrder> sOPendingList) {
+        this.sOPendingList = sOPendingList;
+    }
 
     public boolean isSynced() {
         return synced;
@@ -233,11 +262,16 @@ public class Customer {
 
         if(LedgerName==null)
         {
-            return getLedger().getLedgerName();
+            if(getLedger()!=null) {
+                return getLedger().getLedgerName();
+            }else
+            {
+                return  "name unavailable ";
+            }
         }
         else
         {
-            return  LedgerName;
+            return  " unavailable";
         }
 
     }
@@ -263,6 +297,13 @@ public class Customer {
     }
 
     public String getPersonIncharge() {
+
+        if(PersonIncharge == null)
+        {
+            PersonIncharge = "";
+        }
+
+
         return PersonIncharge;
     }
 
@@ -270,7 +311,13 @@ public class Customer {
         PersonIncharge = personIncharge;
     }
 
-    public String getAddressLine1() {
+    public String getAddressLine1(
+
+    ) {
+        if(AddressLine1 == null)
+        {
+            AddressLine1 = "";
+        }
         return AddressLine1;
     }
 
@@ -279,6 +326,10 @@ public class Customer {
     }
 
     public String getAddressLine2() {
+        if(AddressLine2 == null)
+        {
+            AddressLine2 = "";
+        }
         return AddressLine2;
     }
 
@@ -287,6 +338,10 @@ public class Customer {
     }
 
     public String getCityName() {
+        if(CityName == null)
+        {
+            CityName = "";
+        }
         return CityName;
     }
 
@@ -295,6 +350,10 @@ public class Customer {
     }
 
     public String getTelephoneNo() {
+        if(TelephoneNo == null)
+        {
+            TelephoneNo = "";
+        }
         return TelephoneNo;
     }
 
@@ -303,6 +362,10 @@ public class Customer {
     }
 
     public String getMobileNo() {
+        if(MobileNo == null)
+        {
+            MobileNo = "";
+        }
         return MobileNo;
     }
 
@@ -311,6 +374,10 @@ public class Customer {
     }
 
     public String getGSTNo() {
+        if(GSTNo == null)
+        {
+            GSTNo = "";
+        }
         return GSTNo;
     }
 
@@ -390,6 +457,8 @@ public class Customer {
         LedgerCode = ledgerCode;
     }
 
+
+    @JsonProperty("Ledger")
     Ledger Ledger;
 
     public com.bizsoft.fmcgv2.dataobject.Ledger getLedger() {

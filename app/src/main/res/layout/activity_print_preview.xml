@@ -719,7 +719,7 @@
         app:layout_constraintTop_toBottomOf="@+id/textView53"
         android:layout_marginLeft="16dp"
         app:layout_constraintLeft_toLeftOf="parent"
-        android:layout_marginStart="8dp"/>
+        android:layout_marginStart="16dp"/>
 
     <TextView
         android:id="@+id/textView48"

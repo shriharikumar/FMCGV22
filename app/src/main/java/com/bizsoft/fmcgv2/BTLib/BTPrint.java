@@ -4,6 +4,8 @@ import android.bluetooth.BluetoothSocket;
 import android.graphics.Paint;
 import android.support.v7.app.AppCompatActivity;
 
+import com.bizsoft.fmcgv2.service.BizLogger;
+
 import java.io.IOException;
 import java.io.OutputStream;
 
@@ -12,6 +14,10 @@ import java.io.OutputStream;
  */
 
 public class BTPrint extends AppCompatActivity {
+
+
+
+
     private static  int NoOfLine = 32;
     public  static Paint.Align PrintAlign;
     public static BluetoothSocket btsocket;

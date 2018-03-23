@@ -161,23 +161,14 @@ public class AddedProductAdapter extends BaseAdapter {
                     {
                         productList.get(i).setDiscountAmount(0);
                         productList.get(i).setFinalPrice(0);
+                        productList.get(i).setQty(null);
                         productList.remove(i);
                         notifyDataSetChanged();
                     }
-
                 }
 
             }
         });
-
-
-
-
-
-
-
-
-
         return convertView;
     }
 

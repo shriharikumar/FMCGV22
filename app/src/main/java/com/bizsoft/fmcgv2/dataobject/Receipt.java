@@ -12,6 +12,13 @@ public class Receipt {
     String paymentMode;
     boolean synced;
     String chequeNo;
+    String chequeDate;
+    String chequeBankName;
+
+
+
+
+
 
     public String getChequeNo() {
         return chequeNo;
@@ -35,11 +42,8 @@ public class Receipt {
 
     public String getChequeBankName() {
         return chequeBankName;
-
     }
 
-    String chequeDate;
-    String chequeBankName;
 
 
     public boolean isSynced() {

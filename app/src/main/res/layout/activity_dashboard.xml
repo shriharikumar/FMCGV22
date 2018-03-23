@@ -496,7 +496,7 @@
 
         android:gravity="left"
         android:inputType="numberDecimal"
-        android:text="Note : Bill cannot be raised untill correct amount is received"
+        android:text="Note : Bill can't be raised untill correct amount is received"
         android:textColor="@color/colorPrimaryDark"
         android:textStyle="italic"
 
@@ -818,6 +818,7 @@
         android:textStyle="bold"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/stock_group_search"/>
+
 
 
 </android.support.constraint.ConstraintLayout>

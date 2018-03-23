@@ -1,19 +1,19 @@
 package com.bizsoft.fmcgv2.dataobject;
 
 import android.app.Activity;
+import android.graphics.Bitmap;
 import android.os.Handler;
 
 import android.widget.EditText;
 import android.widget.TextView;
 
-import com.bizsoft.fmcgv2.Tables.TransactionType;
+import com.bizsoft.fmcgv2.Tables.*;
+import com.bizsoft.fmcgv2.Tables.Sale;
 import com.bizsoft.fmcgv2.adapter.AddedProductAdapter;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.BitSet;
-import java.util.Collection;
 
+import microsoft.aspnet.signalr.client.SignalRFuture;
 import microsoft.aspnet.signalr.client.hubs.HubConnection;
 import microsoft.aspnet.signalr.client.hubs.HubProxy;
 
@@ -23,6 +23,7 @@ import microsoft.aspnet.signalr.client.hubs.HubProxy;
 
 public class Store {
 
+    public static String SERVER_HUB_CHAT = "ABServerHub";
     private static Store instance =null;
     public ArrayList<Company> companyList = new ArrayList<Company>();
     public ArrayList<Company> pureCompanyList = new ArrayList<Company>();
@@ -62,7 +63,7 @@ public class Store {
     public TextView reprintSpinnerText;
     public  ArrayList<Receipt> receipts = new ArrayList<Receipt>();
     public ArrayList<Payment> payments = new ArrayList<>();
-    public int idleTimeLimit = 5;
+    public int idleTimeLimit = 1;
     public String serverStatus;
     public String appId;
     public String deviceName;
@@ -78,6 +79,22 @@ public class Store {
     public static String currentAccGrpName;
     public Long currentLedgerId;
     public ArrayList<TransactionType> transactionTypeList = new ArrayList<TransactionType>();
+    public ArrayList<TaxMaster> taxMasterList = new ArrayList<TaxMaster>();
+    public double cashLedgerId;
+    public double bankLedgerId;
+
+    public ArrayList<SOPending> SOPendingList = new ArrayList<SOPending>();
+    public ArrayList<com.bizsoft.fmcgv2.Tables.Sale> saleList = new ArrayList<Sale>();
+    public SignalRFuture<Void> signalRFutureCaller;
+    public String saleRefCode;
+    public String saleOrderRefCode;
+    public String saleReturnRefCode;
+    public String saleReceiptRefCode;
+
+    public ArrayList<String> messageList = new ArrayList<String>();
+    public ArrayList<Notification> notificationList = new ArrayList<Notification>();
+    public String dealerLogo;
+    public Bitmap dealerLogoBitmap;
 
 
     public static Store getInstance() {
@@ -90,7 +107,8 @@ public class Store {
 
         return instance;
     }
-    public String domain = "app.denariusoft.com";
+    public String domain = "app.bizsoftsolution.com";
+    public  String urlType = "full";
     public  String baseUrl = "http://"+domain+"/";
 
 
@@ -100,5 +118,19 @@ public class Store {
 
     protected Object clone() throws CloneNotSupportedException {
         return super.clone();
+    }
+    public String getHost()
+    {
+        if(Store.getInstance().urlType.contains("full")) {
+            Store.getInstance().baseUrl = "http://" + Store.getInstance().domain + "/";
+        }
+        else
+        {
+            Store.getInstance().baseUrl = "http://" + Store.getInstance().domain + "/";
+
+        }
+        String host = Store.getInstance().baseUrl;
+
+        return host;
     }
 }

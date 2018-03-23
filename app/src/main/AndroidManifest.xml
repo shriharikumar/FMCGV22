@@ -95,6 +95,10 @@
         <activity android:name=".service.BlockPage"/>
         <activity android:name=".DownloadDataActivity">
         </activity>
+        <activity android:name=".STOSOActivity">
+        </activity>
+        <activity android:name=".AppActivity">
+        </activity>
     </application>
 
 </manifest>

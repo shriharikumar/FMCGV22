@@ -38,6 +38,7 @@ import static com.bizsoft.fmcgv2.DashboardActivity.BLUETOOTH_FLAG;
 
 public class ReprintActivity extends AppCompatActivity {
 
+
     Spinner customerSpinner,saleType,printItem;
     private String currentSaleType;
     private String customer;
@@ -66,6 +67,8 @@ public class ReprintActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_reprint);
+
+
         customerSpinner = (Spinner) findViewById(R.id.customer_spinner);
         saleType = (Spinner) findViewById(R.id.sale_type_spinner);
         listView = (ListView) findViewById(R.id.listview);
@@ -81,16 +84,12 @@ public class ReprintActivity extends AppCompatActivity {
         bizUtils = new BizUtils();
 
         getSupportActionBar().setTitle("Reprint Bills");
-
         df = new DecimalFormat("#.####");
         df.setRoundingMode(RoundingMode.CEILING);
-
         setCustomerSpinner();
-
         menu.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
                 bizUtils.showMenu(ReprintActivity.this);
             }
         });
@@ -108,7 +107,7 @@ public class ReprintActivity extends AppCompatActivity {
 
                         startActivityForResult(intent,BLUETOOTH_FLAG);
 
-                        Toast.makeText(ReprintActivity.this, "new socket", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(ReprintActivity.this, "new connection", Toast.LENGTH_SHORT).show();
 
 
                     }
@@ -549,7 +548,6 @@ public class ReprintActivity extends AppCompatActivity {
             {
                 in = item.getProductName().substring(0,9);
                 itemnameSpace = " ";
-
             }
             else
             {

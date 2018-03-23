@@ -13,9 +13,18 @@ public class User {
         UserId = userId;
     }
 
-    public String SalRefCode ="0000A";
-    public  String SRRefCode="0000B";
-    public  String SORefCode="0000C";
+    public String SalRefCode ;
+    public  String SRRefCode;
+    public  String SORefCode;
+    public String RTRefCode;
+
+    public String getRTRefCode() {
+        return RTRefCode;
+    }
+
+    public void setRTRefCode(String RTRefCode) {
+        this.RTRefCode = RTRefCode;
+    }
 
     public String getSalRefCode() {
         return SalRefCode;

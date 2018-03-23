@@ -18,6 +18,15 @@ public class SaleOrder {
     double subTotal;
     double gst;
     String refCode;
+    boolean synced;
+
+    public boolean isSynced() {
+        return synced;
+    }
+
+    public void setSynced(boolean synced) {
+        this.synced = synced;
+    }
 
     public String getRefCode() {
         return refCode;
@@ -28,6 +37,7 @@ public class SaleOrder {
     }
 
     public double getDiscountValue() {
+
         return discountValue;
     }
 

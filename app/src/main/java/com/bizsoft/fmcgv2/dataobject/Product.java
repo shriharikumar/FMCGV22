@@ -2,6 +2,7 @@ package com.bizsoft.fmcgv2.dataobject;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.gson.internal.LinkedTreeMap;
 
 /**
@@ -10,28 +11,65 @@ import com.google.gson.internal.LinkedTreeMap;
 @JsonIgnoreProperties(ignoreUnknown = true,value = {"UOM","UnderStockGroup"})
 public class Product {
 
+    @JsonProperty("POQty")
             Long POQty;
+    @JsonProperty("PQty")
             Long PQty;
+    @JsonProperty("PRQty")
             Long PRQty;
+    @JsonProperty("SOQty")
             Long SOQty;
+    @JsonProperty("SQty")
             Long SQty;
+    @JsonProperty("SRQty")
             Long SRQty;
+    @JsonProperty("AvailableStock")
             Long AvailableStock;
+    @JsonProperty("IsReOrderLevel")
             boolean IsReOrderLevel;
+    @JsonProperty("SInQty")
             Long SInQty;
+    @JsonProperty("SOutQty")
             Long SOutQty;
+    @JsonProperty("IsReadOnly")
             boolean IsReadOnly;
+    @JsonProperty("IsEnabled")
             boolean IsEnabled;
+    @JsonProperty("Id")
             Long Id;
+    @JsonProperty("ProductName")
             String ProductName;
+    @JsonProperty("StockGroupId")
             Long StockGroupId;
+    @JsonProperty("ItemCode")
             String ItemCode;
+    @JsonProperty("UOMId")
             Long UOMId;
+    @JsonProperty("PurchaseRate")
             String PurchaseRate;
+    @JsonProperty("SellingRate")
             String SellingRate;
+    @JsonProperty("MaxSellingRate")
             Long MaxSellingRate;
+    @JsonProperty("MinSellingRate")
             Long MinSellingRate;
+    @JsonProperty("status")
             boolean status;
+
+    double refSellingPrice;
+
+    public double getRefSellingPrice() {
+
+        if( refSellingPrice==0)
+        {
+
+        }
+        return refSellingPrice;
+    }
+
+    public void setRefSellingPrice(double refSellingPrice) {
+        this.refSellingPrice = refSellingPrice;
+    }
 
     public double getFinalPrice() {
         return finalPrice;
@@ -43,7 +81,7 @@ public class Product {
 
     double finalPrice;
 
-
+    @JsonProperty("IsResale")
     boolean IsResale;
 
     public boolean isResale() {
@@ -79,7 +117,7 @@ public class Product {
     public void setAdded(boolean added) {
         isAdded = added;
     }
-
+    @JsonProperty("MRP")
     double MRP;
             boolean isAdded;
 
@@ -295,7 +333,7 @@ public class Product {
     }
 
     public double getMRP() {
-        return MRP;
+        return Double.parseDouble(getSellingRate());
     }
 
     public void setMRP(double MRP) {
@@ -367,9 +405,12 @@ public class Product {
         StockGroup = stockGroup;
     }
 
+    @JsonProperty("UOMName")
     String UOMName;
+    @JsonProperty("StockGroupName")
             String StockGroupName;
+    @JsonProperty("UOM")
             String UOM;
-
+    @JsonProperty("StockGroup")
             StockGroup StockGroup;
 }

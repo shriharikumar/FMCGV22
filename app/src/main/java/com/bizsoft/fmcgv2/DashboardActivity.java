@@ -11,14 +11,11 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
-import android.graphics.Bitmap;
 import android.graphics.Paint;
-import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
 import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.ActionBar;
@@ -30,11 +27,8 @@ import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.util.TypedValue;
-import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.Window;
-import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.DatePicker;
@@ -74,9 +68,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.reflect.Type;
@@ -165,10 +156,15 @@ public class DashboardActivity extends AppCompatActivity {
     private boolean storeGT = false;
     private ArrayList<Product> prodListToShow;
     private Date chequeDateValue = new Date();
+    private ProductAdapter Padapter;
+    private TextWatcher fromCustomerWatcher;
+    public static View customActionBar;
 
     @Override
     protected void onResume() {
         super.onResume();
+
+        Log.d("Activity:","Resume");
 
         Store.getInstance().addedProductAdapter.setFrom("dashboard");
     }
@@ -193,6 +189,7 @@ public class DashboardActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_dashboard);
 
         saleType = (Spinner) findViewById(R.id.sale_type_spinner);
@@ -207,11 +204,11 @@ public class DashboardActivity extends AppCompatActivity {
         clearCategory = (TextView) findViewById(R.id.clear_category);
         cfc = (TextView) findViewById(R.id.cfc);
         ta = (TextView) findViewById(R.id.ta);
-        cn= (TextView) findViewById(R.id.cn);
+        cn = (TextView) findViewById(R.id.cn);
         chequeNo = (EditText) findViewById(R.id.cheque_no);
         appDiscount = (TextView) findViewById(R.id.app_discount);
 
-        cdl= (TextView) findViewById(R.id.cdl);
+        cdl = (TextView) findViewById(R.id.cdl);
         bnl = (TextView) findViewById(R.id.bnl);
         chequeDate = (EditText) findViewById(R.id.cheque_date);
         bankName = (EditText) findViewById(R.id.bank_name);
@@ -238,17 +235,18 @@ public class DashboardActivity extends AppCompatActivity {
         save.setEnabled(false);
         save.setBackgroundColor(getResources().getColor(R.color.grey));
         preview.setEnabled(false);
+        Log.d("Preview", "Disabled 1");
         preview.setBackgroundColor(getResources().getColor(R.color.grey));
         stockGroupName.setText("All");
 
         getSupportActionBar().setDisplayOptions(ActionBar.DISPLAY_SHOW_CUSTOM);
         getSupportActionBar().setDisplayShowCustomEnabled(true);
         getSupportActionBar().setCustomView(R.layout.custom_action_bar);
-        View view =getSupportActionBar().getCustomView();
+        customActionBar = getSupportActionBar().getCustomView();
 
         BizUtils.getCurrentDatAndTimeInDF();
 
-        ImageButton imageButton= (ImageButton)view.findViewById(R.id.menu);
+        ImageButton imageButton = (ImageButton) customActionBar.findViewById(R.id.menu);
         imageButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -258,7 +256,7 @@ public class DashboardActivity extends AppCompatActivity {
 
             }
         });
-        chequeDate.setOnTouchListener(new View.OnTouchListener(){
+        chequeDate.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
                 int inType = chequeDate.getInputType(); // backup the input type
@@ -289,9 +287,12 @@ public class DashboardActivity extends AppCompatActivity {
         Store.getInstance().grandTotal = grandTotal;
 
         permissionStatus = getSharedPreferences("permissionStatus", MODE_PRIVATE);
-        Log.d(TAG, "Starting application"+this.toString());
-        waiter=new Waiter(Store.getInstance().idleTimeLimit*60*1000,DashboardActivity.this); //3 mins
+        Log.d(TAG, "Starting application" + this.toString());
+        waiter = new Waiter(Store.getInstance().idleTimeLimit * 60 * 1000, DashboardActivity.this);
         waiter.start();
+
+
+        checkBluetoothConnection();
 
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -302,15 +303,32 @@ public class DashboardActivity extends AppCompatActivity {
             getPermission();
 
         }
+        if (paymentModeValue==null)
+        {
 
-        fromCustomer.addTextChangedListener(new TextWatcher() {
+
+            fromCustomerWatcher = new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
 
-                save.setEnabled(false);
-                save.setBackgroundColor(getResources().getColor(R.color.grey));
-                preview.setEnabled(false);
-                preview.setBackgroundColor(getResources().getColor(R.color.grey));
+                if (!(paymentModeValue.contains("PNT") | paymentModeValue.contains("Cheque") )) {
+
+                    if(!currentSaleType.toLowerCase().contains("order")) {
+                        save.setEnabled(false);
+                        save.setBackgroundColor(getResources().getColor(R.color.grey));
+                        preview.setEnabled(false);
+                        Log.d("Preview", "Disabled 2");
+                        preview.setBackgroundColor(getResources().getColor(R.color.grey));
+                    }
+                }
+                else {
+
+                    preview.setEnabled(true);
+                    Log.d("Preview", "Enabled 2.0");
+                    save.setEnabled(true);
+                    save.setBackgroundColor(getResources().getColor(R.color.colorPrimaryDark));
+                    preview.setBackgroundColor(getResources().getColor(R.color.colorPrimaryDark));
+                }
             }
 
             @Override
@@ -321,44 +339,78 @@ public class DashboardActivity extends AppCompatActivity {
             @Override
             public void afterTextChanged(Editable s) {
 
-                if (Store.getInstance().fromCustomer.getText() != null) {
-                    double balance = 0;
-                    if (!Store.getInstance().fromCustomer.getText().toString().equals("") || TextUtils.isEmpty(Store.getInstance().fromCustomer.getText().toString())) {
+                if (!(paymentModeValue.contains("PNT") | paymentModeValue.contains("Cheque") )) {
 
-                        double gt = Double.parseDouble(grandTotal.getText().toString());
-                        double fc = 0;
-                        try {
-                            fc = Double.parseDouble(fromCustomer.getText().toString());
-                            balance = fc - gt;
-                        } catch (Exception e) {
-                            fc = 0;
-                            balance = 0;
+                    if (!currentSaleType.toLowerCase().contains("order"))
+                    {
+
+
+
+                        if (Store.getInstance().fromCustomer.getText() != null) {
+                            double balance = 0;
+                            if (!Store.getInstance().fromCustomer.getText().toString().equals("") || TextUtils.isEmpty(Store.getInstance().fromCustomer.getText().toString())) {
+
+                                double gt = Double.parseDouble(grandTotal.getText().toString());
+                                double fc = 0;
+                                try {
+                                    fc = Double.parseDouble(fromCustomer.getText().toString());
+                                    balance = fc - gt;
+                                } catch (Exception e) {
+                                    fc = 0;
+                                    balance = 0;
+                                }
+
+
+                                if (balance < 0) {
+                                    Toast.makeText(DashboardActivity.this, "Invalid amount received from customer", Toast.LENGTH_SHORT).show();
+                                    save.setEnabled(false);
+                                    save.setBackgroundColor(getResources().getColor(R.color.grey));
+                                    preview.setEnabled(false);
+                                    Log.d("Preview", "Disabled 3");
+                                    preview.setBackgroundColor(getResources().getColor(R.color.grey));
+
+                                } else {
+                                    save.setEnabled(true);
+                                    save.setBackgroundColor(getResources().getColor(R.color.colorPrimaryDark));
+                                    tenderAmount.setText(String.valueOf(String.format("%.2f", balance)));
+
+                                    preview.setEnabled(true);
+                                    Log.d("Preview", "Enabled 4");
+                                    preview.setBackgroundColor(getResources().getColor(R.color.colorPrimaryDark));
+
+                                }
+
+
+                            }
+
                         }
-
-
-                        if (balance < 0) {
-                            Toast.makeText(DashboardActivity.this, "Invalid amount received from customer", Toast.LENGTH_SHORT).show();
-                            save.setEnabled(false);
-                            save.setBackgroundColor(getResources().getColor(R.color.grey));
-                            preview.setEnabled(false);
-                            preview.setBackgroundColor(getResources().getColor(R.color.grey));
-
-                        } else {
-                            save.setEnabled(true);
-                            save.setBackgroundColor(getResources().getColor(R.color.colorPrimaryDark));
-
-                            preview.setEnabled(true);
-                            preview.setBackgroundColor(getResources().getColor(R.color.colorPrimaryDark));
-                            tenderAmount.setText(String.valueOf(String.format("%.2f", balance)));
-                        }
-
-
                     }
 
+                } else {
+
+                    Log.d("Balance Calc", "Not applicable for this method");
                 }
 
             }
-        });
+        };
+        fromCustomer.addTextChangedListener(fromCustomerWatcher);
+
+    }
+    else
+
+            if(!(paymentModeValue.contains("PNT") | paymentModeValue.contains("Cheque")))
+            {
+                save.setEnabled(true);
+                save.setBackgroundColor(getResources().getColor(R.color.colorPrimaryDark));
+
+                preview.setEnabled(true);
+                Log.d("Preview", "Enabled 4");
+                preview.setBackgroundColor(getResources().getColor(R.color.colorPrimaryDark));
+
+
+
+            }
+
 
 
         discountValue.addTextChangedListener(new TextWatcher() {
@@ -460,11 +512,35 @@ public class DashboardActivity extends AppCompatActivity {
 
                 try {
                     if (BTPrint.btsocket == null) {
-                        Intent intent = new Intent(DashboardActivity.this, BTDeviceList.class);
 
-                        startActivityForResult(intent, BLUETOOTH_FLAG);
 
-                        Toast.makeText(DashboardActivity.this, "new socket", Toast.LENGTH_SHORT).show();
+                        android.app.AlertDialog.Builder alertDialog = new android.app.AlertDialog.Builder(DashboardActivity.this);
+                        alertDialog.setMessage("Please connect to the bluetooth to initiate printing");
+                        alertDialog.setPositiveButton("Connect", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+
+                                Intent intent = new Intent(DashboardActivity.this, BTDeviceList.class);
+
+                                startActivityForResult(intent, BLUETOOTH_FLAG);
+
+                                Toast.makeText(DashboardActivity.this, "Initializing bluetooth connection...", Toast.LENGTH_SHORT).show();
+
+
+
+
+                            }
+                        });
+                        alertDialog.setNegativeButton(R.string.noReloadMsg, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                System.out.println("Do nothing....");
+                            }
+                        });
+
+                        alertDialog.create();
+                        alertDialog.show();
+
 
 
                     } else {
@@ -478,11 +554,19 @@ public class DashboardActivity extends AppCompatActivity {
 
 
                         if (customer.getSale().size() > 0) {
-                            print(customer, "Sale Bill", temp);
+
+
+
+                          temp =   customer.getSalesOfCustomer().get(customer.getSalesOfCustomer().size()-1).getProducts();
+
+
+                            print(customer, "Sale Bill", temp,customer.getSalesOfCustomer().get(customer.getSalesOfCustomer().size()-1), null, null);
                         } else if (customer.getSaleOrder().size() > 0) {
-                            print(customer, "Sale Order Bill", temp);
+                            temp =   customer.getSaleOrdersOfCustomer().get(customer.getSaleOrdersOfCustomer().size()-1).getProducts();
+                            print(customer, "Sale Order Bill", temp, null,customer.getSaleOrdersOfCustomer().get(customer.getSaleOrdersOfCustomer().size()-1), null);
                         } else if (customer.getSaleReturn().size() > 0) {
-                            print(customer, "Sale Return Bill", temp);
+                            temp =   customer.getSaleReturnOfCustomer().get(customer.getSaleReturnOfCustomer().size()-1).getProducts();
+                            print(customer, "Sale Return Bill", temp, null, null, customer.getSaleReturnOfCustomer().get(customer.getSaleReturnOfCustomer().size()-1));
                         }
 
 
@@ -505,6 +589,7 @@ public class DashboardActivity extends AppCompatActivity {
 
                     Intent intent = new Intent(DashboardActivity.this, PrintPreview.class);
                     startActivity(intent);
+
                 } else {
                     Toast.makeText(DashboardActivity.this, "Please add some product to sale/sale order", Toast.LENGTH_SHORT).show();
                 }
@@ -561,19 +646,16 @@ public class DashboardActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
 
-                if (Store.getInstance().currentStockGroup != null  ) {
+                System.out.println("Stock Group Id-------"+Store.getInstance().currentStockGroupId);
+                if (Store.getInstance().currentStockGroup != null && Store.getInstance().currentStockGroupId!=null ) {
                     String key = productNameKey.getText().toString();
-                   // showProductList(key, Store.getInstance().currentStockGroupId);
-                    new ShowProductList(DashboardActivity.this,key, Store.getInstance().currentStockGroupId).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+
+
+                    showProductListNew(key, Store.getInstance().currentStockGroupId);
                 } else {
-
-
-                    Toast.makeText(DashboardActivity.this, "Showing all products", Toast.LENGTH_SHORT).show();
-                    String key = productNameKey.getText().toString();
-
-                   // showProductList(key, null);
-
-                    new ShowProductList(DashboardActivity.this,key, null).execute((Runnable) AsyncTask.THREAD_POOL_EXECUTOR);
+                    Toast.makeText(DashboardActivity.this, "Please choose category..", Toast.LENGTH_SHORT).show();
+                    // String key = productNameKey.getText().toString();
+                    // showProductList(key, null);
                 }
 
 
@@ -650,9 +732,6 @@ public class DashboardActivity extends AppCompatActivity {
 
 
                                     print();
-
-
-
                                     clearList();
 
                                     Store.getInstance().addedProductList.clear();
@@ -687,6 +766,13 @@ public class DashboardActivity extends AppCompatActivity {
                                     double r = Store.getInstance().customerList.get(i).getSaleOrderReceivedAmount();
                                     double b = Store.getInstance().customerList.get(i).getSaleOrderBalance();
 
+
+                                    if(TextUtils.isEmpty(fromCustomerValue))
+                                    {
+                                        fromCustomerValue = String.valueOf(0);
+                                    }
+
+
                                     r = r + Double.parseDouble(fromCustomerValue);
                                     b = b + Double.parseDouble(tenderAmountValue);
 
@@ -701,7 +787,6 @@ public class DashboardActivity extends AppCompatActivity {
 
                                     if (storeOffline(Store.getInstance().customerList.get(i))) {
                                         System.out.println("Sale  return  Added to offline list of customer");
-
                                     }
 
                                     print();
@@ -743,6 +828,12 @@ public class DashboardActivity extends AppCompatActivity {
                                         r = Store.getInstance().customerList.get(i).getReceivedAmount();
                                         b = Store.getInstance().customerList.get(i).getBalance();
 
+
+                                        if(TextUtils.isEmpty(fromCustomerValue))
+                                        {
+                                            fromCustomerValue = String.valueOf(0);
+                                        }
+
                                         r = r + Double.parseDouble(fromCustomerValue);
                                         b = b + Double.parseDouble(tenderAmountValue);
 
@@ -783,6 +874,7 @@ public class DashboardActivity extends AppCompatActivity {
                                     save.setEnabled(false);
                                     save.setBackgroundColor(getResources().getColor(R.color.grey));
                                     preview.setEnabled(false);
+                                    Log.d("Preview","Disabled 5");
                                     preview.setBackgroundColor(getResources().getColor(R.color.grey));
                                 }
 
@@ -808,10 +900,14 @@ public class DashboardActivity extends AppCompatActivity {
                     runOnUiThread(new Runnable() {
                         public void run() {
                             //Do something on UiThread
-                            save.setEnabled(false);
-                            save.setBackgroundColor(getResources().getColor(R.color.grey));
-                            preview.setEnabled(false);
-                            preview.setBackgroundColor(getResources().getColor(R.color.grey));
+
+                            if(!currentSaleType.toLowerCase().contains("order")) {
+                                save.setEnabled(false);
+                                save.setBackgroundColor(getResources().getColor(R.color.grey));
+                                preview.setEnabled(false);
+                                Log.d("Preview", "Disabled 6");
+                                preview.setBackgroundColor(getResources().getColor(R.color.grey));
+                            }
                             customerName.setText(String.valueOf(""));
                             stockGroupName.setText(String.valueOf(""));
 
@@ -841,12 +937,44 @@ public class DashboardActivity extends AppCompatActivity {
 
     }
 
-        private void writeToFile(String refCode) {
+    private void checkBluetoothConnection() {
+
+        if (BTPrint.btsocket == null) {
+            android.app.AlertDialog.Builder alertDialog = new android.app.AlertDialog.Builder(DashboardActivity.this);
+            alertDialog.setMessage("Please connect to the bluetooth to initiate printing");
+            alertDialog.setPositiveButton("Connect", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+
+                    Intent intent = new Intent(DashboardActivity.this, BTDeviceList.class);
+
+                    startActivityForResult(intent, BLUETOOTH_FLAG);
+
+                    Toast.makeText(DashboardActivity.this, "Initializing bluetooth connection...", Toast.LENGTH_SHORT).show();
+
+
+
+
+                }
+            });
+            alertDialog.setNegativeButton(R.string.noReloadMsg, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    System.out.println("Do nothing....");
+                }
+            });
+            alertDialog.show();
+        }
+
+
+    }
+
+    private void writeToFile(String refCode) {
 
         Company company = bizUtils.getCompany();
         Customer customer  = Store.getInstance().customerList.get(Store.getInstance().currentCustomerPosition);
-
-        Boolean status = bizUtils.write(DashboardActivity.this,customer.getLedgerName()+" | "+refCode+"|"+bizUtils.getCurrentTime()+" ( "+company.getCompanyName()+" )",company,customer,Store.getInstance().addedProductList,refCode);
+            Boolean status = false;
+         status = bizUtils.write(DashboardActivity.this,customer.getLedgerName()+" | "+refCode+"|"+bizUtils.getCurrentTime()+" | ( "+company.getCompanyName()+" )" +" | "+Store.getInstance().dealerId,company,customer,Store.getInstance().addedProductList,refCode);
 
         if (status)
         {
@@ -904,29 +1032,29 @@ public class DashboardActivity extends AppCompatActivity {
             }
 
 
-            int invce = 1;
+            int invce = 0;
             for(int i=0;i<Store.getInstance().customerList.size();i++)
             {
                     ArrayList<SaleOrder> invoice = Store.getInstance().customerList.get(i).getSaleOrdersOfCustomer();
+                if(invoice.size()>0) {
                     invce = invce + invoice.size();
+                }
 
             }
 
             System.out.println("Ref Code Sale -----"+saleOrder.getRefCode());
 
-            saleOrder.setRefCode(String.valueOf(BizUtils.calculateShortCode(DashboardActivity.currentSaleType)+DashboardActivity.calculateRefCode(Store.getInstance().user.getSRRefCode(),invce)));
+            saleOrder.setRefCode(String.valueOf(BizUtils.calculateShortCode(DashboardActivity.currentSaleType)+DashboardActivity.calculateRefCode(Store.getInstance().user.getSORefCode(),invce)));
 
 
 
             customer.getSaleOrdersOfCustomer().add(saleOrder);
             if (customer.getSaleOrdersOfCustomer().size() > beforeAdd) {
                 status = true;
-
-
-
-            }
+             }
 
             writeToFile(saleOrder.getRefCode());
+
 
 
         }
@@ -945,11 +1073,13 @@ public class DashboardActivity extends AppCompatActivity {
             saleReturn.setReceivedAmount(Double.parseDouble(fromCustomerValue));
             saleReturn.setPaymentMode(paymentModeValue);
 
-            int invce = 1;
+            int invce = 0;
             for(int i=0;i<Store.getInstance().customerList.size();i++)
             {
                 ArrayList<SaleReturn> invoice = Store.getInstance().customerList.get(i).getSaleReturnOfCustomer();
-                invce = invce + invoice.size();
+                if(invoice.size()>0) {
+                    invce = invce + invoice.size();
+                }
 
             }
             saleReturn.setRefCode(String.valueOf(BizUtils.calculateShortCode(DashboardActivity.currentSaleType)+DashboardActivity.calculateRefCode(Store.getInstance().user.getSORefCode(),invce)));
@@ -1003,11 +1133,14 @@ public class DashboardActivity extends AppCompatActivity {
             sale.setPaymentMode(paymentModeValue);
 
             System.out.println("===============PAYMODE=========="+paymentModeValue);
-            int invce = 1;
+            int invce = 0;
             for(int i=0;i<Store.getInstance().customerList.size();i++)
             {
                 ArrayList<Sale> invoice = Store.getInstance().customerList.get(i).getSalesOfCustomer();
-                invce = invce + invoice.size();
+
+                if(invoice.size()>0) {
+                    invce = invce + invoice.size();
+                }
 
             }
             sale.setRefCode(String.valueOf(BizUtils.calculateShortCode(DashboardActivity.currentSaleType)+DashboardActivity.calculateRefCode(Store.getInstance().user.getSalRefCode(),invce)));
@@ -1040,13 +1173,22 @@ public class DashboardActivity extends AppCompatActivity {
 
 
             }
-           // writeToFile(sale.getRefCode());
+             writeToFile(sale.getRefCode());
 
         }
 
         System.out.println("SALE ORDER = " + customer.getSalesOfCustomer().size());
         System.out.println("SALE  = " + customer.getSalesOfCustomer().size());
         System.out.println("SALE  RETURN = " + customer.getSaleReturnOfCustomer().size());
+
+        try {
+            BizUtils.storeAsJSON("customerList",BizUtils.getJSON("customer",Store.getInstance().customerList));
+            System.out.println("DB Updated..on local storage");
+        } catch (ClassNotFoundException e) {
+
+            System.err.println("Unable to write to DB");
+        }
+
 
         return status;
 
@@ -1120,15 +1262,54 @@ public class DashboardActivity extends AppCompatActivity {
 
     public static String calculateRefCode(String refcode, int count)
     {
+      if(refcode.contains("SA"))
+        {
+            refcode = Store.getInstance().user.getSalRefCode().substring(5,10);
+        }
+        if(refcode.contains("SO"))
+        {
+            refcode = Store.getInstance().user.getSORefCode().substring(5,10);;
+        }
+        if(refcode.contains("SR"))
+        {
+            refcode = Store.getInstance().user.getSRRefCode().substring(5,10);
+        }
+        if(refcode.contains("RT"))
+        {
+            refcode = Store.getInstance().user.getRTRefCode().substring(5,10);
+        }
+
+
+        System.out.println("Hexa ref code = "+refcode);
         String result = new String();
 
         Long temp1 = Long.parseLong(refcode, 16);
 
+        System.out.println("Decimal ref code = "+temp1);
+
         temp1 = temp1 + count;
 
-        result = ""+temp1;
+       String hexStr =  Long.toHexString(temp1);
 
-        return  "000"+result;
+
+        int length = String.valueOf(hexStr).length();
+
+        length = 5 - length;
+
+        String partner = "";
+        for(int i=0;i<5;i++)
+        {
+            partner = partner + "0";
+
+            if(i==length-1)
+            {
+                result = partner + hexStr;
+            }
+
+        }
+
+        System.out.println("Ref code = "+result);
+    return  result;
 
     }
 
@@ -1136,16 +1317,35 @@ public class DashboardActivity extends AppCompatActivity {
 
         ArrayList<Product> temp = Store.getInstance().addedProductList;
 
-        System.out.println("Added Products in cart ==== " + temp.size());
+        System.out.println("Added product in cart ==== " + temp.size());
+
 
         try {
             if (BTPrint.btsocket == null) {
-                Intent intent = new Intent(DashboardActivity.this, BTDeviceList.class);
+                android.app.AlertDialog.Builder alertDialog = new android.app.AlertDialog.Builder(DashboardActivity.this);
+                alertDialog.setMessage("Please connect to the bluetooth to initiate printing");
+                alertDialog.setPositiveButton("Connect", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
 
-                startActivityForResult(intent, BLUETOOTH_FLAG);
+                        Intent intent = new Intent(DashboardActivity.this, BTDeviceList.class);
 
-                Toast.makeText(DashboardActivity.this, "Intializing bluetooth...", Toast.LENGTH_SHORT).show();
+                        startActivityForResult(intent, BLUETOOTH_FLAG);
 
+                        Toast.makeText(DashboardActivity.this, "Initializing bluetooth connection...", Toast.LENGTH_SHORT).show();
+
+
+
+
+                    }
+                });
+                alertDialog.setNegativeButton(R.string.noReloadMsg, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        System.out.println("Do nothing....");
+                    }
+                });
+                alertDialog.show();
 
             } else {
 
@@ -1158,11 +1358,19 @@ public class DashboardActivity extends AppCompatActivity {
 
 
                 if (customer.getSale().size() > 0) {
-                    print(customer, "Sale Bill", temp);
+
+
+
+                    temp =   customer.getSalesOfCustomer().get(customer.getSalesOfCustomer().size()-1).getProducts();
+
+
+                    print(customer, "Sale Bill", temp,customer.getSalesOfCustomer().get(customer.getSalesOfCustomer().size()-1), null, null);
                 } else if (customer.getSaleOrder().size() > 0) {
-                    print(customer, "Sale Order Bill", temp);
+                    temp =   customer.getSaleOrdersOfCustomer().get(customer.getSaleOrdersOfCustomer().size()-1).getProducts();
+                    print(customer, "Sale Order Bill", temp, null,customer.getSaleOrdersOfCustomer().get(customer.getSaleOrdersOfCustomer().size()-1), null);
                 } else if (customer.getSaleReturn().size() > 0) {
-                    print(customer, "Sale Return Bill", temp);
+                    temp =   customer.getSaleReturnOfCustomer().get(customer.getSaleReturnOfCustomer().size()-1).getProducts();
+                    print(customer, "Sale Return Bill", temp, null, null, customer.getSaleReturnOfCustomer().get(customer.getSaleReturnOfCustomer().size()-1));
                 }
 
 
@@ -1255,6 +1463,7 @@ public class DashboardActivity extends AppCompatActivity {
             product.setProductName(products.get(i).getProductName());
             product.setAvailableStock(currentProduct.getAvailableStock());
             product.setMRP(currentProduct.getMRP());
+            product.setSellingRate(currentProduct.getSellingRate());
             product.setUOMId(currentProduct.getUOMId());
             product.setUOM(currentProduct.getUOM());
             product.setDiscountAmount(currentProduct.getDiscountAmount());
@@ -1273,7 +1482,11 @@ public class DashboardActivity extends AppCompatActivity {
         System.out.println("Size of prod list" + Store.getInstance().addedProductList.size());
         for (int i = 0; i < Store.getInstance().addedProductList.size(); i++) {
             Store.getInstance().addedProductList.get(i).setQty(null);
+            Store.getInstance().addedProductList.get(i).setDiscountAmount(0.0);
+            Store.getInstance().addedProductList.get(i).setFinalPrice(0);
             Store.getInstance().addedProductList.get(i).setResale(false);
+
+
         }
         savedCurrentTransaction = true;
     }
@@ -1286,8 +1499,6 @@ public class DashboardActivity extends AppCompatActivity {
                 .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
                         DashboardActivity.this.finish();
-
-
                     }
                 })
                 .setNegativeButton("No", new DialogInterface.OnClickListener() {
@@ -1301,21 +1512,17 @@ public class DashboardActivity extends AppCompatActivity {
     }
 
 
-
-
     public void showCustomerList(String key) {
 
 
         final Dialog dialog = new Dialog(DashboardActivity.this);
         dialog.setTitle("Customer List");
-
-
         ArrayList<Customer> tempCus = Store.getInstance().customerList;
         final ArrayList<Customer> tempCus1 = new ArrayList<Customer>();
         System.out.println("Size of customer list = "+tempCus.size());
         for (int i = 0; i < tempCus.size(); i++) {
-            System.out.println(tempCus.get(i).getId() + "_____Cus___" + tempCus.get(i).getLedgerName());
-            if (tempCus.get(i).getLedgerName().toLowerCase().contains(key) || String.valueOf(tempCus.get(i).getId()).toLowerCase().contains(key)) {
+            System.out.println(tempCus.get(i).getId() + "_____Cus___" + tempCus.get(i).getLedger().getLedgerName());
+            if (tempCus.get(i).getLedger().getLedgerName().toLowerCase().contains(key) || String.valueOf(tempCus.get(i).getId()).toLowerCase().contains(key)) {
 
                 tempCus1.add(tempCus.get(i));
 
@@ -1352,7 +1559,7 @@ public class DashboardActivity extends AppCompatActivity {
 
                     Store.getInstance().currentCustomerPosition = position;
 
-                    customerName.setText(String.valueOf(Store.getInstance().currentCustomer).toUpperCase());
+                    customerName.setText(String.valueOf(tempCus1.get(position).getLedger().getLedgerName()).toUpperCase());
                     dialog.dismiss();
                     Toast.makeText(DashboardActivity.this, "Customer Name : " + Store.getInstance().currentCustomer, Toast.LENGTH_SHORT).show();
                 }
@@ -1485,7 +1692,7 @@ public class DashboardActivity extends AppCompatActivity {
                         tempProduct1.add(prod);
                     }
 
-                    System.out.println(tempProduct.get(i).getStockGroupId() +"*************************"+tempProduct.get(i).getStockGroupId() );
+                    System.out.println(tempProduct.get(i).getItemCode() +"*************************"+tempProduct.get(i).getStockGroupId() );
 
                     if(currentStockGroupId!=null) {
                         if (tempProduct.get(i).getStockGroupId().compareTo(currentStockGroupId) == 0) {
@@ -1518,19 +1725,7 @@ public class DashboardActivity extends AppCompatActivity {
             {
                 dialog.setContentView(R.layout.show_product_list_dialog);
                 productListView = (ListView) dialog.findViewById(R.id.listview);
-
-
-
-
-
-                Button add = (Button) dialog.findViewById(R.id.button);
-
-
-
-
-
-
-
+               Button add = (Button) dialog.findViewById(R.id.button);
                 add.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
@@ -1659,6 +1854,263 @@ public class DashboardActivity extends AppCompatActivity {
         }
 
     }
+    public void showProductListNew(String key, Long currentStockGroupId) {
+
+
+        final Dialog dialog = new Dialog(DashboardActivity.this);
+        final ArrayList<Product> tempProduct1 = new ArrayList<Product>();
+        ArrayList<Product> tempProduct = new ArrayList<Product>();
+        dialog.setTitle("Product List");
+        tempProduct.addAll(Store.getInstance().productList);
+        System.out.println("product size -=-----" + Store.getInstance().productList.size());
+
+
+        System.out.println("tempProduct Group Size = " + Store.getInstance().stockGroupList.size());
+
+        System.out.println("Size of sale = " + Store.getInstance().addedProductForSales.size());
+        for (int c = 0; c < Store.getInstance().addedProductForSales.size(); c++) {
+            System.out.println("Test 1 - Sale item ======= " + Store.getInstance().addedProductForSales.get(c).getProductName() + "=====" + Store.getInstance().addedProductForSales.get(c).getQty());
+        }
+
+        for (int i = 0; i < tempProduct.size(); i++) {
+            if (tempProduct.get(i).getProductName().toLowerCase().contains(key) || String.valueOf(tempProduct.get(i).getId()).contains(key) || String.valueOf(tempProduct.get(i).getItemCode()).contains(key)) {
+
+
+                if (currentStockGroupId == null) {
+
+                    Product prod = new Product();
+
+                    prod = tempProduct.get(i);
+
+                    tempProduct1.add(prod);
+                }
+
+                System.out.println(tempProduct.get(i).getStockGroupId() + "*************************" + tempProduct.get(i).getStockGroupId());
+
+                if (currentStockGroupId != null) {
+                    if (tempProduct.get(i).getStockGroupId().compareTo(currentStockGroupId) == 0) {
+
+                        System.out.println("Stock Group ID ---from Item--- A" + tempProduct.get(i).getStockGroupId());
+
+                        Product prod = new Product();
+
+                        prod = tempProduct.get(i);
+
+                        tempProduct1.add(prod);
+                    }
+                } else {
+                    System.out.println("Stock Group ID ---from Item--- NA" + tempProduct.get(i).getStockGroupId());
+                }
+            }
+        }
+
+
+        System.out.println("Temp product -  current stock group id=== " + currentStockGroupId);
+        System.out.println("Prod Size === " + tempProduct1.size());
+        if (tempProduct1.size() == 0) {
+            dialog.setContentView(R.layout.no_result);
+            dialog.show();
+        } else {
+            dialog.setContentView(R.layout.show_product_list_dialog);
+            productListView = (ListView) dialog.findViewById(R.id.listview);
+
+
+
+            final Button add = (Button) dialog.findViewById(R.id.button);
+            final Button loadMore = (Button) dialog.findViewById(R.id.load_more);
+
+
+            add.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+
+
+                    if (Store.getInstance().addedProductList.size() == 0) {
+
+
+                        for (int i = 0; i < tempProduct1.size(); i++) {
+
+
+                            System.out.println("Product Quantity  ===== " + tempProduct1.get(i).getQty());
+                            if (tempProduct1.get(i).getQty() != null) {
+
+                                Product product = new Product();
+                                product = tempProduct1.get(i);
+                                System.out.println("Id === " + product.getId());
+                                System.out.println("Reason === " + product.getParticulars());
+
+
+                                if (product.getParticulars() == null) {
+                                    Toast.makeText(DashboardActivity.this, "reson empty", Toast.LENGTH_SHORT).show();
+                                }
+
+                                Store.getInstance().addedProductList.add(product);
+
+
+                            }
+                        }
+
+
+                        Store.getInstance().addedProductAdapter.notifyDataSetChanged();
+                    } else {
+                        for (int i = 0; i < tempProduct1.size(); i++) {
+                            System.out.println("ID====================" + tempProduct1.get(i).getId());
+                            System.out.println("QTY====================" + tempProduct1.get(i).getQty());
+                            if (tempProduct1.get(i).getQty() != null) {
+
+
+                                System.out.println("Size === " + Store.getInstance().addedProductList.size());
+
+
+                                boolean status = true;
+                                for (int j = 0; j < Store.getInstance().addedProductList.size(); j++) {
+
+                                    System.out.println(tempProduct1.get(i).getId() + "<==========>" + Store.getInstance().addedProductList.get(j).getId());
+                                    if (tempProduct1.get(i).getId() == Store.getInstance().addedProductList.get(j).getId()) {
+                                        status = false;
+                                    }
+
+
+                                }
+                                if (status) {
+                                    Product product = new Product();
+                                    product = tempProduct1.get(i);
+                                    System.out.println("Id === " + product.getId());
+                                    System.out.println("Reason === " + product.getParticulars());
+                                    Store.getInstance().addedProductList.add(product);
+                                    Store.getInstance().addedProductAdapter.notifyDataSetChanged();
+                                    System.out.println("Product does not exist..");
+                                }
+
+
+                                for (int j = 0; j < Store.getInstance().addedProductList.size(); j++) {
+
+                                    System.out.println("Added Product === " + Store.getInstance().addedProductList.get(j).getId());
+
+                                }
+
+
+                            }
+                        }
+
+                    }
+
+
+                    dialog.dismiss();
+
+                }
+            });
+
+            final ArrayList<ArrayList<Product>> productPageList = new ArrayList<ArrayList<Product>>();
+
+            System.out.println("product under cat size = "+tempProduct1.size());
+
+
+            int offSetValue = 15;
+
+
+            if (tempProduct1.size() > offSetValue) {
+
+                loadMore.setVisibility(View.VISIBLE);
+                int pageSize = tempProduct1.size() / offSetValue + tempProduct1.size() % offSetValue;
+                int pageNum = tempProduct1.size()/offSetValue;
+                int pageLast = tempProduct1.size() % offSetValue;
+                int pageOffSet = 0;
+
+                if(pageLast!=0)
+                {
+                    pageNum++;
+                }
+
+
+                System.out.println("Product index size----------------"+tempProduct1.size());
+                for (int i = 1; i <= pageNum; i++) {
+                    int pageOffSetCount =0;
+                    if(i==pageNum)
+                    {
+                        pageOffSetCount = pageLast;
+
+                    }
+                    else
+                    {
+                        pageOffSetCount  = i*offSetValue;
+                    }
+                    System.out.println("Product index page num ----------------"+i);
+                    ArrayList<Product> products = new ArrayList<Product>();
+                    for(int j=(i-1)*offSetValue;j<pageOffSetCount;j++)
+                    {
+                        products.add(tempProduct1.get(j));
+
+                        System.out.println("Product index ----------------"+j);
+                    }
+                    productPageList.add(products);
+
+                }
+
+
+                System.out.println("Product index ----------------"+productPageList.size());
+
+
+
+                tempProduct1.clear();
+                tempProduct1.addAll(productPageList.get(0));
+
+                Padapter = new ProductAdapter(DashboardActivity.this, tempProduct1);
+
+                productListView.setAdapter(Padapter);
+
+
+                final int[] pageIndex = {1};
+                final int finalPageNum = pageNum;
+                loadMore.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+
+
+                        if(pageIndex[0]< finalPageNum) {
+
+                            tempProduct1.addAll(productPageList.get(pageIndex[0]));
+                            pageIndex[0]++;
+                            Padapter.notifyDataSetChanged();
+                            loadMore.setVisibility(View.GONE);
+                            add.setVisibility(View.GONE);
+
+
+                            loadMore.setText(String.valueOf("Load ("+pageIndex[0]+") of "+finalPageNum));
+
+                            Toast.makeText(DashboardActivity.this, "Loaded..", Toast.LENGTH_SHORT).show();
+
+                            loadMore.setVisibility(View.VISIBLE);
+                            add.setVisibility(View.VISIBLE);
+
+                            productListView.setSelection(Padapter.getCount() - 1);
+
+
+                        }
+                        else
+                        {
+                            Toast.makeText(DashboardActivity.this, "End of page..", Toast.LENGTH_SHORT).show();
+                        }
+
+                    }
+                });
+
+            }
+            else
+            {
+                Padapter = new ProductAdapter(DashboardActivity.this, tempProduct1);
+
+                productListView.setAdapter(Padapter);
+
+                loadMore.setVisibility(View.GONE);
+
+            }
+
+
+            dialog.show();
+
+        }
+    }
 
     class LoadProductList extends  AsyncTask
     {
@@ -1727,7 +2179,7 @@ public class DashboardActivity extends AppCompatActivity {
                     tempProduct1.add(prod);
                 }
 
-                System.out.println(tempProduct.get(i).getStockGroupId() +"*************************"+tempProduct.get(i).getStockGroupId() );
+                System.out.println("*************************"+tempProduct.get(i).getItemCode() );
 
                 if(currentStockGroupId!=null) {
                     if (tempProduct.get(i).getStockGroupId().compareTo(currentStockGroupId) == 0) {
@@ -1778,7 +2230,8 @@ public class DashboardActivity extends AppCompatActivity {
                 public void onClick(View v) {
 
 
-                    if (Store.getInstance().addedProductList.size() == 0) {
+
+                            if (Store.getInstance().addedProductList.size() == 0) {
 
 
                         for (int i = 0; i < tempProduct1.size(); i++) {
@@ -1790,6 +2243,7 @@ public class DashboardActivity extends AppCompatActivity {
                                 Product product = new Product();
                                 product = tempProduct1.get(i);
                                 System.out.println("Id === " + product.getId());
+                                System.out.println("Qty === " + product.getQty());
                                 System.out.println("Reason === " + product.getParticulars());
 
 
@@ -1886,20 +2340,20 @@ public class DashboardActivity extends AppCompatActivity {
 
                 if(position==1)
                 {
-
                     paymentMode.setEnabled(false);
                     isGst.setEnabled(false);
-
                     Toast.makeText(DashboardActivity.this, "Payment option disabled..", Toast.LENGTH_SHORT).show();
-
                     fromCustomer.setEnabled(false);
-
                     tenderAmount.setEnabled(false);
-
                     save.setEnabled(true);
                     save.setBackgroundColor(getResources().getColor(R.color.colorPrimaryDark));
                     preview.setEnabled(true);
+                    Log.d("Preview","Enaabled 7");
                     preview.setBackgroundColor(getResources().getColor(R.color.colorPrimaryDark));
+
+                    isGst.setSelection(0);
+                    paymentMode.setSelection(0);
+                    discount.setSelection(0);
 
 
                 }
@@ -1907,14 +2361,17 @@ public class DashboardActivity extends AppCompatActivity {
                 {
                     save.setEnabled(false);
                     save.setBackgroundColor(getResources().getColor(R.color.grey));
-                    preview.setEnabled(false);
+                   preview.setEnabled(false);
+                    Log.d("Preview","Disabled 8");
                     preview.setBackgroundColor(getResources().getColor(R.color.grey));
                     paymentMode.setEnabled(true);
                     isGst.setEnabled(true);
                     fromCustomer.setEnabled(true);
                     Toast.makeText(DashboardActivity.this, "Payment option enabled..", Toast.LENGTH_SHORT).show();
                     tenderAmount.setEnabled(true);
-
+                    isGst.setSelection(0);
+                    paymentMode.setSelection(0);
+                    discount.setSelection(0);
                 }
 
             }
@@ -2024,6 +2481,7 @@ public class DashboardActivity extends AppCompatActivity {
         for(int i =0 ; i < Store.getInstance().transactionTypeList.size();i++)
         {
 
+
             if(Store.getInstance().transactionTypeList.get(i).getType().toLowerCase().contains("credit"))
             {
                 genderList.add("PNT (Payment Next Trip)");
@@ -2054,6 +2512,7 @@ public class DashboardActivity extends AppCompatActivity {
                 {
 
                     preview.setEnabled(true);
+                    Log.d("Preview","Enabled 9");
                     save.setEnabled(true);
                     save.setBackgroundColor(getResources().getColor(R.color.colorPrimaryDark));
                     preview.setBackgroundColor(getResources().getColor(R.color.colorPrimaryDark));
@@ -2110,29 +2569,32 @@ public class DashboardActivity extends AppCompatActivity {
                 }
                 else
                 {
-                    preview.setEnabled(false);
-                    save.setEnabled(false);
-                    save.setBackgroundColor(getResources().getColor(R.color.grey));
-                    preview.setBackgroundColor(getResources().getColor(R.color.grey));
+
+                    if(!currentSaleType.toLowerCase().contains("order")) {
+                        preview.setEnabled(false);
+                        Log.d("Preview", "Disabled 10");
+                        save.setEnabled(false);
+                        save.setBackgroundColor(getResources().getColor(R.color.grey));
+                        preview.setBackgroundColor(getResources().getColor(R.color.grey));
 
 
+                        System.out.println("cash mode hiding chq no ...");
+                        fromCustomer.setEnabled(true);
+                        tenderAmount.setEnabled(true);
+                        fromCustomer.setVisibility(View.VISIBLE);
+                        tenderAmount.setVisibility(View.VISIBLE);
+                        cfc.setVisibility(View.VISIBLE);
+                        ta.setVisibility(View.VISIBLE);
+                        note.setVisibility(View.VISIBLE);
+                        cn.setVisibility(View.GONE);
 
-                    System.out.println("cash mode hiding chq no ...");
-                    fromCustomer.setEnabled(true);
-                    tenderAmount.setEnabled(true);
-                    fromCustomer.setVisibility(View.VISIBLE);
-                    tenderAmount.setVisibility(View.VISIBLE);
-                    cfc.setVisibility(View.VISIBLE);
-                    ta.setVisibility(View.VISIBLE);
-                    note.setVisibility(View.VISIBLE);
-                    cn.setVisibility(View.GONE);
-
-                    chequeNo.setVisibility(View.GONE);
-                    bnl.setVisibility(View.GONE);
-                    cdl.setVisibility(View.GONE);
-                    bankName.setVisibility(View.GONE);
-                    chequeDate.setVisibility(View.GONE);
-                    dateChooser.setVisibility(View.GONE);
+                        chequeNo.setVisibility(View.GONE);
+                        bnl.setVisibility(View.GONE);
+                        cdl.setVisibility(View.GONE);
+                        bankName.setVisibility(View.GONE);
+                        chequeDate.setVisibility(View.GONE);
+                        dateChooser.setVisibility(View.GONE);
+                    }
                 }
 
             }
@@ -2585,7 +3047,7 @@ public class DashboardActivity extends AppCompatActivity {
 
 
                             double x =0;
-                            x = customer.getOPBal() + grandTotal;
+                            x = customer.getLedger().getOPBal() + grandTotal;
                             customer.setOPBal(x);
 
                             System.out.println("OP ="+ x);
@@ -2609,7 +3071,7 @@ public class DashboardActivity extends AppCompatActivity {
 
                             System.out.println("GT ==="+grandTotal);
 
-                            x = customer.getOPBal() +grandTotal;
+                            x = customer.getLedger().getOPBal() +grandTotal;
 
                             System.out.println("OP ="+ x);
                             customer.setOPBal(x);
@@ -2699,15 +3161,13 @@ public class DashboardActivity extends AppCompatActivity {
                     }
 
                     if (newcustomer = true) {
-                        System.out.println("Salew size " + customers.getSale().size());
+                        System.out.println("Sale size " + customers.getSale().size());
                         System.out.println("Sale order size " + customers.getSaleOrder().size());
                         if (customers.getSale().size() > 0) {
                             newcustomer = false;
 
                             for (int y = 0; y < customers.getSalesOfCustomer().size(); y++) {
-                                new Save(DashboardActivity.this, "sale/save", "SDetails", customers.getSalesOfCustomer().get(y).getProducts(), customers.getId(), customers.getSalesOfCustomer().get(y), null, null,customers).execute();
-
-
+                                new Save(DashboardActivity.this, "sale/save", "SODetails", customers.getSalesOfCustomer().get(y).getProducts(), customers.getId(), customers.getSalesOfCustomer().get(y), null, null,customers).execute();
                             }
 
 
@@ -2849,7 +3309,7 @@ public class DashboardActivity extends AppCompatActivity {
 
     }
 
-    public void print(Customer customer, String type, ArrayList<Product> products) {
+    public void print(Customer customer, String type, ArrayList<Product> products, Sale sale, SaleOrder saleOrder, SaleReturn saleReturn) {
         SharedPreferences prefs = getSharedPreferences(Store.getInstance().MyPREFERENCES, MODE_PRIVATE);
         BTPrint.SetAlign(Paint.Align.CENTER);
         BTPrint.PrintTextLine(prefs.getString(getString(R.string.companyName), "Aboorvass"));
@@ -2872,7 +3332,20 @@ public class DashboardActivity extends AppCompatActivity {
         BTPrint.PrintTextLine("------------------------------");
         BTPrint.PrintTextLine("***Bill Details***");
         BizUtils bizUtils = new BizUtils();
-        BTPrint.PrintTextLine("Bill ID :" + String.valueOf(Store.getInstance().companyID + "-" + Store.getInstance().dealerId + "-" + customer.getId()));
+        String refNo = "";
+        if(sale!=null) {
+            refNo = sale.getRefCode();
+        }
+        if(saleOrder !=null)
+        {
+            refNo = saleOrder.getRefCode();
+        }
+        if(saleReturn !=null)
+        {
+            refNo = saleReturn.getRefCode();
+        }
+
+        BTPrint.PrintTextLine("Bill Ref No :" + String.valueOf(refNo));
         BTPrint.PrintTextLine("Bill Date :" + bizUtils.getCurrentTime());
 
         BTPrint.PrintTextLine("------------------------------");
@@ -2885,13 +3358,30 @@ public class DashboardActivity extends AppCompatActivity {
             BTPrint.PrintTextLine("Customer ID :" + customer1.getId());
         }
 
-        BTPrint.PrintTextLine("Customer Name :" + customer1.getLedgerName());
-        BTPrint.PrintTextLine("Person In Charge :" + customer1.getPersonIncharge());
-        BTPrint.PrintTextLine("GST No :" + customer1.getGSTNo());
+        BTPrint.PrintTextLine("Customer Name :" + customer1.getLedger().getLedgerName());
+        BTPrint.PrintTextLine("Person In Charge :" + customer1.getLedger().getPersonIncharge());
+        BTPrint.PrintTextLine("GST No :" + customer1.getLedger().getGSTNo());
 
 
         BTPrint.PrintTextLine("------------------------------");
         BTPrint.PrintTextLine("Sale/Order/Return:" + type);
+
+        String paymentModeValue = "";
+        if(sale!=null) {
+
+            paymentModeValue = sale.getPaymentMode();
+
+        }
+        if(saleOrder !=null)
+        {
+            paymentModeValue = saleOrder.getPaymentMode();
+        }
+        if(saleReturn !=null)
+        {
+            paymentModeValue = saleReturn.getPaymentMode();
+        }
+
+
         BTPrint.PrintTextLine("Payment Mode :" + paymentModeValue);
         BTPrint.PrintTextLine("------------------------------");
 
@@ -2899,7 +3389,7 @@ public class DashboardActivity extends AppCompatActivity {
         BTPrint.PrintTextLine("***ITEM DETAILS***");
         BTPrint.PrintTextLine("------------------------------");
         BTPrint.SetAlign(Paint.Align.LEFT);
-        BTPrint.PrintTextLine("NAME     QTY    PRICE   AMOUNT ");
+      //  BTPrint.PrintTextLine("NAME     QTY    PRICE   AMOUNT ");
 
         customer = Store.getInstance().customerList.get(Store.getInstance().currentCustomerPosition);
 
@@ -2917,15 +3407,18 @@ public class DashboardActivity extends AppCompatActivity {
             String iq = "";
             String ip = "";
             String ir = "";
+            String id = "";
 
             String itemnameSpace = "";
             String itemquantitySpace = "";
             String itempriceSpace = "";
             String itemrateSpace = "";
+            String itemDisSpace = "";
             int spaceLength = 0;
             int itemQspaceL = 0;
             int itemPspaceL = 0;
             int itemRspaceL = 0;
+            int itemDspaceL = 0;
 
 
             if (item.getProductName().length() >= 10) {
@@ -2952,7 +3445,7 @@ public class DashboardActivity extends AppCompatActivity {
                 int total = String.valueOf(item.getQty()).length();
                 itemQspaceL = 6 - total;
 
-                for (int x = 0; x < itemQspaceL; x++) {
+                for (int x = 0; x < itemQspaceL -1 ; x++) {
                     itemquantitySpace = itemquantitySpace + " ";
                 }
 
@@ -2969,7 +3462,7 @@ public class DashboardActivity extends AppCompatActivity {
                 int total = itemP.length();
                 itemPspaceL = 8 - total;
 
-                for (int x = 0; x < itemPspaceL; x++) {
+                for (int x = 0; x < itemPspaceL-1; x++) {
                     itempriceSpace = itempriceSpace + " ";
                 }
 
@@ -2977,10 +3470,37 @@ public class DashboardActivity extends AppCompatActivity {
                 ip = itemP;
 
             }
+
+            String itemD = String.valueOf(String.format("%.2f",item.getDiscountAmount()));
+
+
+            if (itemD.length() >= 8) {
+                in = itemD.substring(0, 7);
+                itemDisSpace = " ";
+
+            } else {
+                int total = itemD.length();
+                itemDspaceL = 8 - total;
+
+                for (int x = 0; x < itemDspaceL-1; x++) {
+                    itemDisSpace = itemDisSpace + " ";
+                }
+
+
+                id = itemD;
+
+                if(item.getDiscountAmount()==0)
+                {
+                    id = "     ";
+                }
+
+            }
+
+
             double subTotalx = 0;
             double gstx = 0;
             if (String.valueOf(item.getQty() * item.getMRP()).length() >= 6) {
-                ir = String.valueOf(item.getQty() * item.getMRP()).substring(0, 4);
+                ir = String.valueOf( (item.getQty() * item.getMRP()) - item.getDiscountAmount()).substring(0, 4);
                 ir = ir + "..";
 
                 subTotalx = item.getQty() * item.getMRP();
@@ -2992,8 +3512,8 @@ public class DashboardActivity extends AppCompatActivity {
                     itemrateSpace = itemrateSpace + " ";
                 }
 
-                ir = String.valueOf(String.format("%.2f",item.getQty() * item.getMRP()));
-                subTotalx = subTotalx + item.getQty() * item.getMRP();
+                ir = String.valueOf(String.format("%.2f",item.getQty() * item.getMRP() - item.getDiscountAmount() ));
+                subTotalx = subTotalx + item.getQty() * item.getMRP() -item.getDiscountAmount() ;
             }
 
 
@@ -3028,13 +3548,76 @@ public class DashboardActivity extends AppCompatActivity {
 
             mainGst = bizRound(mainGst, 2);
 
-            BTPrint.PrintTextLine(in + itemnameSpace + iq + itemquantitySpace + ip + itempriceSpace + ir);
+           // BTPrint.PrintTextLine(in + itemnameSpace + iq + itemquantitySpace + ip + itempriceSpace + ir);
+
+            BTPrint.PrintTextLine(i+1+"."+item.getProductName());
+
+
+            int l = itemquantitySpace.length();
+            int ld = l/2;
+
+            String q = itemquantitySpace.substring(0,ld)+ "x" + itemquantitySpace.substring(ld,l);
+            String dis ="";
+            if(item.getDiscountAmount()!=0)
+            {
+
+                int d = itemDisSpace.length();
+                int dd = d / 2;
+
+                 dis = itemDisSpace.substring(0, dd) + " -" + itemDisSpace.substring(dd, d);
+            }
+            else
+            {
+                int d = itemDisSpace.length();
+                int dd = d / 2;
+
+                 dis = itemDisSpace.substring(0, dd) + " " + itemDisSpace.substring(dd, d);
+            }
+
+            int p = itemDisSpace.length();
+            int pd = p/2;
+
+            String pr = itemDisSpace.substring(0,pd)+ " =" + itemDisSpace.substring(pd,p);
+
+
+
+
+            BTPrint.PrintTextLine( " "+iq + q + ip + dis + id +pr + ir);
+
         }
 
 
-        String mgt = String.valueOf(String.format("%.2f", mainGrantTotal));
-        String ra = String.valueOf(String.format("%.2f",fromCustomerValue));
-        String ba = String.valueOf(String.format("%.2f",tenderAmountValue));
+
+        String mgt = "0.00";
+
+        String ra="0.00",ba="0.00";
+        Double disV = 0.00;
+        if(sale!=null) {
+
+             ra = String.valueOf(String.format("%.2f", sale.getReceivedAmount()));
+             ba = String.valueOf(String.format("%.2f", sale.getBalance()));
+             mgt = String.valueOf(String.format("%.2f", sale.getGrandTotal()));
+            mainGst = sale.getGst();
+             disV = sale.getDiscountValue();
+
+        }
+         if(saleOrder !=null)
+        {
+            ra = String.valueOf(String.format("%.2f", saleOrder.getReceivedAmount()));
+            ba = String.valueOf(String.format("%.2f", saleOrder.getBalance()));
+
+            disV = saleOrder.getDiscountValue();
+            mgt = String.valueOf(String.format("%.2f", saleOrder.getGrandTotal()));
+            mainGst = saleOrder.getGst();
+        }
+        if(saleReturn !=null)
+        {
+            ra = String.valueOf(String.format("%.2f", saleReturn.getReceivedAmount()));
+            ba = String.valueOf(String.format("%.2f", saleReturn.getBalance()));
+            disV = saleReturn.getDiscountValue();
+            mgt = String.valueOf(String.format("%.2f", saleReturn.getGrandTotal()));
+            mainGst = saleReturn.getGst();
+        }
 
         int mgtL = mgt.length();
         int raL = ra.length();
@@ -3074,11 +3657,32 @@ public class DashboardActivity extends AppCompatActivity {
         BTPrint.PrintTextLine("Sub total RM " + String.format("%.2f",mainSubTotal));
         BTPrint.PrintTextLine("GST RM " + gstSpace + String.format("%.2f",mainGst));
 
+
+
+        BTPrint.PrintTextLine("Discount RM " + gstSpace + String.format("%.2f",disV));
+
         BTPrint.PrintTextLine("------------------------------");
         BTPrint.PrintTextLine("------------------------------");
+
+        if(sale!=null)
+        {
+            mainGrantTotal = sale.getGrandTotal();
+            ba = String.valueOf(sale.getBalance());
+
+        }
+        if(saleOrder!=null)
+        {
+            mainGrantTotal = saleOrder.getGrandTotal();
+            ba = String.valueOf(saleOrder.getBalance());
+        }
+        if(saleReturn!=null)
+        {
+            mainGrantTotal = saleReturn.getGrandTotal();
+            ba = String.valueOf(saleReturn.getBalance());
+        }
         BTPrint.PrintTextLine("Grand total " + mgSpace + " RM " + String.format("%.2f",mainGrantTotal));
-        BTPrint.PrintTextLine("Received amount " + raSpace + " RM " + String.format("%.2f",Double.parseDouble(fromCustomerValue)));
-        BTPrint.PrintTextLine("Balance amount " + baSpace + " RM " + String.format("%.2f",Double.parseDouble(tenderAmountValue)));
+        BTPrint.PrintTextLine("Received amount " + raSpace + " RM " + String.format("%.2f",Double.parseDouble(ra)));
+        BTPrint.PrintTextLine("Balance amount " + baSpace + " RM " + String.format("%.2f",Double.parseDouble(ba)));
         BTPrint.PrintTextLine("------------------------------");
         BTPrint.SetAlign(Paint.Align.CENTER);
         BTPrint.PrintTextLine("*****THANK YOU*****");
@@ -3088,10 +3692,7 @@ public class DashboardActivity extends AppCompatActivity {
         BTPrint.PrintTextLine("------------------------------");
         BTPrint.SetAlign(Paint.Align.CENTER);
         BTPrint.PrintTextLine("Powered By Denariu Soft SDN BHD");
-
         BTPrint.printLineFeed();
-
-
         savedCurrentTransaction = false;
 
 
@@ -3424,5 +4025,112 @@ public class DashboardActivity extends AppCompatActivity {
             setPaymentMode();
 
         }
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        Log.d("Activity:","Stop");
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        Log.d("Activity:","Destroy");
+        fromCustomer.removeTextChangedListener(fromCustomerWatcher);
+
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        Log.d("Activity:","Start");
+        fromCustomerWatcher = new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+                if (!(paymentModeValue.contains("PNT") | paymentModeValue.contains("Cheque") )) {
+
+                    if(!currentSaleType.toLowerCase().contains("order")) {
+                        save.setEnabled(false);
+                        save.setBackgroundColor(getResources().getColor(R.color.grey));
+                        preview.setEnabled(false);
+                        Log.d("Preview", "Disabled 2");
+                        preview.setBackgroundColor(getResources().getColor(R.color.grey));
+                    }
+                }
+                else {
+
+                    preview.setEnabled(true);
+                    Log.d("Preview", "Enabled 2.0");
+                    save.setEnabled(true);
+                    save.setBackgroundColor(getResources().getColor(R.color.colorPrimaryDark));
+                    preview.setBackgroundColor(getResources().getColor(R.color.colorPrimaryDark));
+                }
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+
+                if (!(paymentModeValue.contains("PNT") | paymentModeValue.contains("Cheque") )) {
+
+                    if (!currentSaleType.toLowerCase().contains("order"))
+                    {
+
+
+
+                        if (Store.getInstance().fromCustomer.getText() != null) {
+                            double balance = 0;
+                            if (!Store.getInstance().fromCustomer.getText().toString().equals("") || TextUtils.isEmpty(Store.getInstance().fromCustomer.getText().toString())) {
+
+                                double gt = Double.parseDouble(grandTotal.getText().toString());
+                                double fc = 0;
+                                try {
+                                    fc = Double.parseDouble(fromCustomer.getText().toString());
+                                    balance = fc - gt;
+                                } catch (Exception e) {
+                                    fc = 0;
+                                    balance = 0;
+                                }
+
+
+                                if (balance < 0) {
+                                    Toast.makeText(DashboardActivity.this, "Invalid amount received from customer", Toast.LENGTH_SHORT).show();
+                                    save.setEnabled(false);
+                                    save.setBackgroundColor(getResources().getColor(R.color.grey));
+                                    preview.setEnabled(false);
+                                    Log.d("Preview", "Disabled 3");
+                                    preview.setBackgroundColor(getResources().getColor(R.color.grey));
+
+                                } else {
+                                    save.setEnabled(true);
+                                    save.setBackgroundColor(getResources().getColor(R.color.colorPrimaryDark));
+                                    tenderAmount.setText(String.valueOf(String.format("%.2f", balance)));
+
+                                    preview.setEnabled(true);
+                                    Log.d("Preview", "Enabled 4");
+                                    preview.setBackgroundColor(getResources().getColor(R.color.colorPrimaryDark));
+
+                                }
+
+
+                            }
+
+                        }
+                    }
+
+                } else {
+
+                    Log.d("Balance Calc", "Not applicable for this method");
+                }
+
+            }
+        };
+        fromCustomer.addTextChangedListener(fromCustomerWatcher);
     }
 }

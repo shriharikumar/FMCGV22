@@ -49,10 +49,10 @@ public class BTIntialize {
                 if(customer.getSale().size()>0)
                 {
 
-                    dashboardActivity.print(customer,"Sale Bill",customer.getSale());
+                    dashboardActivity.print(customer,"Sale Bill",customer.getSale(), customer.getSalesOfCustomer().get(customer.getSalesOfCustomer().size() - 1), customer.getSaleOrdersOfCustomer().get(customer.getSaleOrdersOfCustomer().size() - 1), customer.getSaleReturnOfCustomer().get(customer.getSaleReturnOfCustomer().size() - 1));
                 }
                 else if (customer.getSaleOrder().size()>0) {
-                    dashboardActivity.print(customer,"Sale Order Bill",customer.getSaleOrder());
+                    dashboardActivity.print(customer,"Sale Order Bill",customer.getSaleOrder(), customer.getSalesOfCustomer().get(customer.getSalesOfCustomer().size() - 1), customer.getSaleOrdersOfCustomer().get(customer.getSaleOrdersOfCustomer().size() - 1), customer.getSaleReturnOfCustomer().get(customer.getSaleReturnOfCustomer().size() - 1));
                 }
 
 

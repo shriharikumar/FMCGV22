@@ -172,6 +172,14 @@ public class AddCustomerActivity extends AppCompatActivity {
 
         Ledger ledger = new Ledger();
         ledger.setLedgerName(customerName.getText().toString());
+        ledger.setPersonIncharge(personIncharge.getText().toString());
+        ledger.setAddressLine1(addressLine1.getText().toString());
+        ledger.setAddressLine2(addressLine2.getText().toString());
+        ledger.setCityName(city.getText().toString());
+        ledger.setMobileNo(mobileNumber.getText().toString());
+        ledger.setGSTNo(gstNumber.getText().toString());
+
+
 
         System.out.println("Account group Id "+currentAccGrpId);
         System.out.println("Account group name "+currentAccGrpName);

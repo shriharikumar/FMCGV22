@@ -59,16 +59,11 @@ public class StockGroupAdapter extends BaseAdapter {
         convertView = layoutInflater.inflate(R.layout.stock_single_item, null);
         holder.stockGroupName = (TextView) convertView.findViewById(R.id.customer_name);
         holder.id = (TextView) convertView.findViewById(R.id.sale_id);
-        holder.company = (TextView) convertView.findViewById(R.id.company);
-        holder.groupcode = (TextView) convertView.findViewById(R.id.group_code);
+
 
         holder.id.setText(String.valueOf(stockGroup.getId()));
         holder.stockGroupName.setText(String.valueOf(stockGroup.getStockGroupName()));
-        holder.company.setText(String.valueOf(stockGroup.getCompany()));
-        holder.groupcode.setText(String.valueOf(stockGroup.getGroupCode()));
 
-        holder.groupcode.setVisibility(View.INVISIBLE);
-        holder.company.setVisibility(View.INVISIBLE);
         return convertView;
     }
 }

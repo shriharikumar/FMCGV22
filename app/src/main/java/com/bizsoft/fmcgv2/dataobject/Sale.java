@@ -18,6 +18,7 @@ public class Sale {
     double subTotal;
     String tempId;
     String refCode;
+    boolean synced;
 
     public String getRefCode() {
         return refCode;
@@ -155,5 +156,14 @@ public class Sale {
     }
 
     double gst;
+
+    public boolean isSynced() {
+        return synced;
+    }
+
+    public void setSynced(boolean synced) {
+        this.synced = synced;
+    }
+
     double grandTotal;
 }

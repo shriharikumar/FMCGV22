@@ -8,8 +8,10 @@ import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import com.bizsoft.fmcgv2.BTLib.BTIntialize;
 import com.bizsoft.fmcgv2.adapter.SalesAdapter;
@@ -40,10 +42,11 @@ public class SalesOrderActivity extends AppCompatActivity {
         listView = (ListView) findViewById(R.id.listview);
         searchBar = (EditText) findViewById(R.id.search_bar);
 
-
         AllSalesOrderList.addAll(Store.getInstance().addedProductForSalesOrder);
         salesOrderAdapter = new SalesAdapter(SalesOrderActivity.this,AllSalesOrderList);
         listView.setAdapter(salesOrderAdapter);
+
+        
 
 
 

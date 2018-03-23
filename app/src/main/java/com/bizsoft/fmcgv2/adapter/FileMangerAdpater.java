@@ -1,26 +1,34 @@
 package com.bizsoft.fmcgv2.adapter;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.StrictMode;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.MimeTypeMap;
 import android.widget.BaseAdapter;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.bizsoft.fmcgv2.InvoiceListActivity;
+import com.bizsoft.fmcgv2.PrintPreview;
 import com.bizsoft.fmcgv2.R;
 import com.bizsoft.fmcgv2.dataobject.BizFile;
+import com.bizsoft.fmcgv2.dataobject.Company;
+import com.bizsoft.fmcgv2.service.BizUtils;
 import com.creativityapps.gmailbackgroundlibrary.BackgroundMail;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 /**
  * Created by GopiKing on 31-08-2017.
@@ -32,6 +40,7 @@ public class FileMangerAdpater extends BaseAdapter{
 
     LayoutInflater layoutInflater= null;
     public ArrayList<BizFile> fileList = new ArrayList<BizFile>();
+    private Dialog dialog;
 
 
     public FileMangerAdpater(Context context,ArrayList<BizFile> fileList) {
@@ -97,32 +106,101 @@ public class FileMangerAdpater extends BaseAdapter{
 
         return convertView;
     }
-    public void sendMail(String absolutePath) throws Exception {
+    public void sendMail(final String absolutePath) throws Exception {
 
-        BackgroundMail.newBuilder(context)
-                .withUsername("hari.bizsoft@gmail.com")
-                .withPassword("Bizsoft@123")
-                .withMailto("hari.bizsoft@gmail.com")
-                .withType(BackgroundMail.TYPE_PLAIN)
-                .withSubject("Invoice copy")
-                .withBody("This is a digitally generated invoice copy from Aboorvas SDN BHD.")
-                .withAttachments(absolutePath)
 
-                .withOnSuccessCallback(new BackgroundMail.OnSuccessCallback() {
-                    @Override
-                    public void onSuccess() {
-                        //do some magic
-                        Toast.makeText(context, "Success..", Toast.LENGTH_SHORT).show();
+        dialog = new Dialog(context);
+        dialog.setContentView(R.layout.email_prompt);
+        final EditText mail_id = (EditText) dialog.findViewById(R.id.mail_id);
+        final Button send = (Button) dialog.findViewById(R.id.send);
+        send.setEnabled(false);
+        send.setBackgroundColor(context.getResources().getColor(R.color.grey));
+        dialog.show();
+
+        final String[] receipientMail = {"hari.bizsoft@gmail.com"};
+        mail_id.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @SuppressLint("ResourceAsColor")
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if(mail_id.getText()!=null) {
+                    if(isValid(mail_id.getText().toString()))
+                    {
+                        send.setEnabled(true);
+                        send.setBackgroundColor(context.getResources().getColor(R.color.colorPrimaryDark));
+                        receipientMail[0] = mail_id.getText().toString();
                     }
-                })
-                .withOnFailCallback(new BackgroundMail.OnFailCallback() {
-                    @Override
-                    public void onFail() {
-                        //do some magic
+                    else
+                    {
+                        send.setEnabled(false);
+                        send.setBackgroundColor(context.getResources().getColor(R.color.grey));
                     }
-                })
-                .send();
+
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+
+
+            }
+        });
+
+        final Company company = BizUtils.getCompany();
+
+
+
+        send.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                BackgroundMail.newBuilder(context)
+                        .withUsername("hari.bizsoft@gmail.com")
+                        .withPassword("Bizsoft@123")
+                        .withMailto(receipientMail[0])
+                        .withType(BackgroundMail.TYPE_PLAIN)
+                        .withSubject("Invoice copy")
+                        .withBody("This is a digitally generated invoice copy from ."+ company.getCompanyName())
+                        .withAttachments(absolutePath)
+
+                        .withOnSuccessCallback(new BackgroundMail.OnSuccessCallback() {
+                            @Override
+                            public void onSuccess() {
+                                //do some magic
+                                Toast.makeText(context, "Success..", Toast.LENGTH_SHORT).show();
+                                dialog.dismiss();
+                            }
+                        })
+                        .withOnFailCallback(new BackgroundMail.OnFailCallback() {
+                            @Override
+                            public void onFail() {
+                                //do some magic
+                            }
+                        })
+                        .send();
+
+
+            }
+        });
+
+
     }
+    public static boolean isValid(String email)
+    {
+        String emailRegex = "^[a-zA-Z0-9_+&*-]+(?:\\."+
+                "[a-zA-Z0-9_+&*-]+)*@" +
+                "(?:[a-zA-Z0-9-]+\\.)+[a-z" +
+                "A-Z]{2,7}$";
+
+        Pattern pat = Pattern.compile(emailRegex);
+        if (email == null)
+            return false;
+        return pat.matcher(email).matches();
+    }
+
     public  void openPDF(File file)
     {
 

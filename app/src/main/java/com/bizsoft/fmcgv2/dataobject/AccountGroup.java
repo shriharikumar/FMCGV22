@@ -1,6 +1,7 @@
 package com.bizsoft.fmcgv2.dataobject;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Created by GopiKing on 28-12-2017.
@@ -9,9 +10,11 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class AccountGroup {
-
+    @JsonProperty("Id")
     Long Id;
+    @JsonProperty("GroupName")
     String GroupName;
+    @JsonProperty("UnderGroupId")
     Long UnderGroupId;
 
     public Long getId() {

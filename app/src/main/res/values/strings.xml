@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Aboorvass 2.0</string>
+    <string name="app_name">Aboorvass</string>
     <string name="alert_ButtonRetry">retry</string>
     <string name="alert_ButtonCancel">cancel</string>
     <string name="companyID">companyId</string>
@@ -16,6 +16,8 @@
     <string name="email">email</string>
     <string name="postal_code">postal_code</string>
     <string name="companyAddressLine2">companyAddressLineTwo</string>
-    <string name="companyName">companyName</string>
+    <string name="companyName">Aboorvass</string>
     <string name="title_activity_dummy">Dummy</string>
+    <string name="reloadMsg">Do you want to reload</string>
+    <string name="noReloadMsg">No</string>
 </resources>

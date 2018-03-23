@@ -3,23 +3,40 @@ package com.bizsoft.fmcgv2;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.bizsoft.fmcgv2.dataobject.Store;
+import com.bizsoft.fmcgv2.service.BizLogger;
+import com.bizsoft.fmcgv2.service.BizUtils;
 import com.bizsoft.fmcgv2.service.SignalRService;
 
 public class DownloadDataActivity extends AppCompatActivity {
 
     ProgressBar progressBar;
-    TextView textView,customers,products,categories,accounts,percentage;
+    public  TextView textView;
+    public TextView customers;
+    public static TextView products;
+    public TextView categories;
+    public TextView accounts;
+    public TextView percentage;
+    private ImageView companyLogo;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        new BizLogger(DownloadDataActivity.this);
+
+
+
         setContentView(R.layout.activity_download_data);
 
         textView = (TextView) findViewById(R.id.textView);
@@ -30,6 +47,9 @@ public class DownloadDataActivity extends AppCompatActivity {
         categories = (TextView) findViewById(R.id.stock);
         accounts = (TextView) findViewById(R.id.accounts);
         percentage = (TextView) findViewById(R.id.percentage);
+        companyLogo = (ImageView) findViewById(R.id.company_logo);
+
+
 
 
         new DownloaddData().execute();
@@ -62,12 +82,34 @@ public class DownloadDataActivity extends AppCompatActivity {
                 @Override
                 public void run() {
 
-//stuff that updates ui
+                    if(Store.getInstance().dealerLogo!=null)
+                    {
+                        Bitmap bmp= BizUtils.StringToBitMap(Store.getInstance().dealerLogo);
+
+                        companyLogo.setImageBitmap(bmp);
+
+                        Store.getInstance().dealerLogoBitmap = bmp;
+                    }
                     textView.setText("Downloading customers..");
                 }
             });
 
             SignalRService.customerList();
+            SignalRService.cashLedgerId();
+
+           try {
+               SignalRService.bankLedgerId();
+              // SignalRService.bankNameList();
+               SignalRService.SOPendingList();
+               SignalRService.Sales_getNewRefNo();
+               SignalRService.SalesOrder_getNewRefNo();
+               SignalRService.SalesReturn_getNewRefNo();
+               SignalRService.Receipt_getNewRefNo();
+           }
+           catch (Exception e)
+           {
+               System.out.println("catch---"+e);
+           }
             progressBar.setProgress(25);
             runOnUiThread(new Runnable() {
                 @Override
@@ -81,14 +123,14 @@ public class DownloadDataActivity extends AppCompatActivity {
                 }
             });
 
-            SignalRService.productList();
+            SignalRService.productList(DownloadDataActivity.this);
             progressBar.setProgress(50);
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
                     products.setText(String.valueOf(Store.getInstance().productList.size()));
                     percentage.setText("50%");
-//stuff that updates ui
+
                     textView.setText("Downloading categories..");
                 }
             });
@@ -100,13 +142,17 @@ public class DownloadDataActivity extends AppCompatActivity {
                 public void run() {
                     percentage.setText("75%");
                     categories.setText(String.valueOf(Store.getInstance().stockGroupList.size()));
-//stuff that updates ui
+
                     textView.setText("Downloading accounts group..");
                 }
             });
 
             SignalRService.accountGroupList();
             progressBar.setProgress(100);
+
+          //  SignalRService.taxMasterList();
+         //   progressBar.setProgress(100);
+
             return null;
         }
         @Override
@@ -117,7 +163,14 @@ public class DownloadDataActivity extends AppCompatActivity {
             accounts.setText(String.valueOf(Store.getInstance().accountsGroupList.size()));
             textView.setText(result);
            // progressDialog.dismiss();
+
+            SignalRService.getCompanyDetails(DownloadDataActivity.this);
+            finish();
             Intent intent = new Intent(DownloadDataActivity.this,DashboardActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+
             startActivity(intent);
 
 
@@ -129,7 +182,6 @@ public class DownloadDataActivity extends AppCompatActivity {
         System.out.println("----------Status-----------------------"+values[0]);
         textView.setText("Running..."+ values[0]);
         progressBar.setProgress(values[0]);
-
     }
     }
 }

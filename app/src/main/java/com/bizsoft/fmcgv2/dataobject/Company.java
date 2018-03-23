@@ -1,6 +1,7 @@
 package com.bizsoft.fmcgv2.dataobject;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -26,6 +27,16 @@ public class Company {
 
    boolean IsReadOnly;
    boolean IsEnabled;
+    @JsonProperty("Logo")
+    String Logo;
+
+    public String getLogo() {
+        return Logo;
+    }
+
+    public void setLogo(String logo) {
+        Logo = logo;
+    }
 
     public boolean isReadOnly() {
         return IsReadOnly;
@@ -86,6 +97,11 @@ public class Company {
     }
 
     public String getAddressLine1() {
+
+        if(AddressLine1== null)
+        {
+            AddressLine1= "";
+        }
         return AddressLine1;
     }
 
@@ -94,6 +110,11 @@ public class Company {
     }
 
     public String getAddressLine2() {
+
+        if(AddressLine2== null)
+        {
+            AddressLine2= "";
+        }
         return AddressLine2;
     }
 
@@ -102,6 +123,11 @@ public class Company {
     }
 
     public String getPostalCode() {
+
+        if(PostalCode== null)
+        {
+            PostalCode= "";
+        }
         return PostalCode;
     }
 
@@ -110,6 +136,10 @@ public class Company {
     }
 
     public String getTelephoneNo() {
+        if(TelephoneNo== null)
+        {
+            TelephoneNo = "";
+        }
         return TelephoneNo;
     }
 
@@ -118,6 +148,11 @@ public class Company {
     }
 
     public String getEMailId() {
+
+        if(EMailId == null)
+        {
+            EMailId= "";
+        }
         return EMailId;
     }
 
@@ -126,6 +161,12 @@ public class Company {
     }
 
     public String getGSTNo() {
+
+        if(GSTNo == null)
+        {
+            GSTNo= "";
+        }
+
         return GSTNo;
     }
 

@@ -3,6 +3,8 @@ package com.bizsoft.fmcgv2.service;
 import android.content.Context;
 import android.util.Log;
 
+import com.bizsoft.fmcgv2.dataobject.Store;
+
 public class Waiter extends Thread
 {
     private static final String TAG=Waiter.class.getName();
@@ -28,9 +30,30 @@ public class Waiter extends Thread
         {
             idle=System.currentTimeMillis()-lastUsed;
             Log.d(TAG, "Application is idle for "+idle +" ms");
+
+
+
+
+            if(Network.isNetworkAvailable(context)) {
+                if (Store.getInstance().mHubConnectionReceiver != null) {
+                    if (Store.getInstance().mHubConnectionReceiver.getState().toString().toLowerCase().contains("disconnected")) {
+                        System.out.println("----re login attempt");
+                        SignalRService.reconnect(context);
+                    }
+                }
+            }
+            else
+            {
+                Log.d("Network Info","No connection");
+            }
+
+
             try
             {
                 Thread.sleep(5000); //check every 5 seconds
+
+
+
             }
             catch (InterruptedException e)
             {

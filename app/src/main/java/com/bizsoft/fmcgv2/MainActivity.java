@@ -59,34 +59,37 @@ import microsoft.aspnet.signalr.client.transport.ClientTransport;
 import microsoft.aspnet.signalr.client.transport.NegotiationException;
 import microsoft.aspnet.signalr.client.transport.ServerSentEventsTransport;
 
+import static com.bizsoft.fmcgv2.dataobject.Store.SERVER_HUB_CHAT;
+
 public class MainActivity extends AppCompatActivity {
-    private final int SPLASH_DISPLAY_LENGTH = 1000;String domain;
-    private HubConnection mHubConnectionCaller;
-    private HubConnection mHubConnectionReceiver;
+
+    private final int SPLASH_DISPLAY_LENGTH = 1000;
+    static String domain;
+    private static HubConnection mHubConnectionCaller;
+    private static HubConnection mHubConnectionReceiver;
     static  Handler mHandlerCaller;
     static  Handler mHandlerReceiver;
     public static HubProxy mHubProxyCaller;
     static HubProxy mHubProxyReceiver;
-
     SharedPreferences sharedpreferences ;
     private String MyPREFERENCES = "ACTIVATION_KEY";
     SharedPreferences.Editor editor;
     private String AppId = "AppId";
-    private String android_id;
-    private String email;
+    private static String android_id;
+    private static String email;
     private String AppIDValue;
     private String RConnectionId;
     private String TAG = "SIGNAL IR";
     static String fromClassName;
-    TextView message;
-
+    static TextView message;
     Activity activity;
-    Context context;
+    static Context context;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_main);
 
 
@@ -94,9 +97,6 @@ public class MainActivity extends AppCompatActivity {
 
         message = (TextView) findViewById(R.id.message);
         Store.getInstance().mainActvity = MainActivity.this;
-
-
-
         new Handler().postDelayed(new Runnable(){
             @Override
             public void run() {
@@ -126,7 +126,14 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-            String baseUrl  = "http://"+domain+"/fmcg/";
+        String baseUrl = "";
+        if(Store.getInstance().urlType.contains("full")) {
+            baseUrl = "http://" + domain + "/";
+        }
+        else
+        {
+            baseUrl = "http://" + domain + "/";
+        }
 
 
             System.out.println("Base URL = "+baseUrl);
@@ -145,7 +152,13 @@ public class MainActivity extends AppCompatActivity {
 
                 System.out.println("Domain a= "+ Store.getInstance().domain);
 
-                Store.getInstance().baseUrl = "http://"+ Store.getInstance().domain+"/fmcg/";
+                if(Store.getInstance().urlType.contains("full")) {
+                    Store.getInstance().baseUrl = "http://" + domain + "/";
+                }
+                else
+                {
+                    Store.getInstance().baseUrl = "http://" + domain + "/";
+                }
                 System.out.println("Base URL= "+ Store.getInstance().baseUrl);
 
 
@@ -153,26 +166,28 @@ public class MainActivity extends AppCompatActivity {
             if(status) {
                 // new GetCompanyDetails(MainActivity.this).execute();
 
+                SignalRService.getCompanyDetails(MainActivity.this);
+
                 System.out.println("trying to log in ..");
                 boolean loginStat = SignalRService.login(MainActivity.this, null, null, null);
 
                 if (loginStat)
                 {
-
                     if (Store.getInstance().user.getId() == null) {
                         Toast.makeText(context, "Invalid Username or Password..", Toast.LENGTH_SHORT).show();
                     } else {
 
                         try {
 
-                            Store.getInstance().user.SalRefCode = "0000A";
-                            Store.getInstance().user.SRRefCode = "0000B";
-                            Store.getInstance().user.SORefCode = "0000C";
+                           // Store.getInstance().user.SalRefCode = "0000A";
+                          //  Store.getInstance().user.SRRefCode = "0000B";
+                           // Store.getInstance().user.SORefCode = "0000C";
 
                         } catch (Exception e) {
                             System.out.println("Exception e :" + e);
                         }
 
+                        finish();
                         Intent intent = new Intent(context, DownloadDataActivity.class);
                         startActivity(intent);
 
@@ -208,6 +223,15 @@ public class MainActivity extends AppCompatActivity {
         ProgressDialog progressDialog;
 
         public ConnectCaller(Context context) {
+
+            if(Store.getInstance().urlType.contains("full")) {
+                Store.getInstance().baseUrl = "http://" + Store.getInstance().domain + "/";
+            }
+            else
+            {
+                Store.getInstance().baseUrl = "http://" + Store.getInstance().domain + "/";
+
+            }
             this.host = Store.getInstance().baseUrl;
             this.context = context;
             this.progressDialog    = new ProgressDialog(this.context);
@@ -229,7 +253,7 @@ public class MainActivity extends AppCompatActivity {
 
             mHubConnectionCaller = new HubConnection(host);
 
-            String SERVER_HUB_CHAT = "ABServerHub";
+           SERVER_HUB_CHAT = "ABServerHub";
 
             mHubProxyCaller = mHubConnectionCaller.createHubProxy(SERVER_HUB_CHAT);
             mHubProxyCaller.on("Display",
@@ -252,13 +276,8 @@ public class MainActivity extends AppCompatActivity {
             ClientTransport clientTransport = new ServerSentEventsTransport(mHubConnectionCaller.getLogger());
             SignalRFuture<Void> signalRFuture = mHubConnectionCaller.start(clientTransport);
 
+            Store.getInstance().signalRFutureCaller = signalRFuture;
 
-            Action<HubResult> hr= new Action<HubResult>() {
-                @Override
-                public void run(HubResult hubResult) throws Exception {
-
-                }
-            };
 
 
 
@@ -300,9 +319,19 @@ public class MainActivity extends AppCompatActivity {
     {
         String host =  null;
         Context context;
+        String result ="";
 
 
         public ConnectReceiver(Context context) {
+            if(Store.getInstance().urlType.contains("full")) {
+                Store.getInstance().baseUrl = "http://" + Store.getInstance().domain + "/";
+            }
+            else
+            {
+                Store.getInstance().baseUrl = "http://" + Store.getInstance().domain + "/";
+
+            }
+
             this.host =Store.getInstance().baseUrl;
             this.context = context;
 
@@ -426,7 +455,7 @@ public class MainActivity extends AppCompatActivity {
                 Log.d("Connection:","trying...");
 
                 try {
-                    signalRFuture.get(60,TimeUnit.SECONDS);
+                    signalRFuture.get(60*10,TimeUnit.SECONDS);
                     Log.d("Connection:","ok");
                 } catch (TimeoutException e) {
                     e.printStackTrace();
@@ -440,29 +469,40 @@ public class MainActivity extends AppCompatActivity {
 
             }
 
-            return null;
-        }
-        @Override
-        protected void onPostExecute(Object o) {
-            super.onPostExecute(o);
-
-
-            Toast.makeText(context, "Receiver Connected....", Toast.LENGTH_SHORT).show();
+            //Toast.makeText(context, "Receiver Connected....", Toast.LENGTH_SHORT).show();
             recieveAllMsgFromReceiver("Receiver");
 
 
             RConnectionId = mHubConnectionReceiver.getConnectionId();
 
-            String result = null;
+             result = null;
             try {
-                result = mHubProxyCaller.invoke(String.class, "SetReceiverConnectionIdToCaller",RConnectionId).get();
+
+                try {
+                    Log.d("RecConnIdToCaller","Trying...");
+                    result = mHubProxyCaller.invoke(String.class, "SetReceiverConnectionIdToCaller",RConnectionId).get(60*3, TimeUnit.SECONDS);
+                } catch (TimeoutException e) {
+                    e.printStackTrace();
+                }
             } catch (InterruptedException e) {
                 e.printStackTrace();
             } catch (ExecutionException e) {
                 e.printStackTrace();
             }
 
-            Log.d("REG RID TO SERVER",result);
+            try {
+                Log.d("REG RID TO SERVER", result);
+            }catch (Exception e)
+            {
+                Log.d("REG RID TO SERVER", "result is null");
+            }
+
+            return null;
+        }
+        @Override
+        protected void onPostExecute(Object o) {
+            super.onPostExecute(o);
+
 
             if(Boolean.valueOf(result))
             {
@@ -510,6 +550,8 @@ public class MainActivity extends AppCompatActivity {
 
                         System.out.println("State listener ---State :"+connectionState.name());
                         System.out.println("State listener ---State :"+connectionState1.name());
+
+
                     }
                 });
 
@@ -545,21 +587,15 @@ public class MainActivity extends AppCompatActivity {
     {
         String s = null;
 
-
-
         try {
             s = mHubProxyCaller.invoke(String.class,"GetNewAppID").get();
-
             System.out.println("new App Id______"+s);
-
-
 
         } catch (InterruptedException e) {
             e.printStackTrace();
         } catch (ExecutionException e) {
             e.printStackTrace();
         }
-
         return s ;
 
     }
@@ -576,7 +612,6 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void run() {
 
-
                         try {
                             GsonBuilder gsonBuilder = new GsonBuilder();
                             gsonBuilder.setDateFormat("M/d/yy hh:mm a");
@@ -584,18 +619,14 @@ public class MainActivity extends AppCompatActivity {
                             final Type collectionType = new TypeToken<ReceiverResponse>() {
                             }.getType();
                             ReceiverResponse response = gson.fromJson(json, collectionType);
-
-
                             System.out.println("AppApproved Change --- " + Boolean.valueOf(String.valueOf(response.isA())));
-
                             if(Boolean.valueOf(String.valueOf(response.isA())))
                             {
-                                Toast.makeText(context, "Ok", Toast.LENGTH_SHORT).show();
-
+                                //Toast.makeText(context, "Ok", Toast.LENGTH_SHORT).show();
                             }
                             else
                             {
-                                Toast.makeText(context, "Not Ok", Toast.LENGTH_SHORT).show();
+                                //Toast.makeText(context, "Not Ok", Toast.LENGTH_SHORT).show();
                             }
                         }
                         catch (Exception e)
@@ -611,7 +642,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
-    private void generateUID(String appIdValue) {
+    public void generateUID(String appIdValue) {
 
 
         android_id = Settings.Secure.getString(context.getContentResolver(),
@@ -642,15 +673,22 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-        new Activate(appIdValue,getLocalBluetoothName(),email,android_id).execute();
+       new Activate(appIdValue,getLocalBluetoothName(),email,android_id).execute();
 
     }
-    public String getLocalBluetoothName(){
+    public static String getLocalBluetoothName(){
         BluetoothAdapter mBluetoothAdapter = null;
         if(mBluetoothAdapter == null){
             mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         }
-        String name = mBluetoothAdapter.getName();
+        String name = "Emulator";
+        try {
+            name = mBluetoothAdapter.getName();
+        }
+        catch (Exception e)
+        {
+
+        }
         if(name == null){
             System.out.println("Name is null!");
             name = mBluetoothAdapter.getName();

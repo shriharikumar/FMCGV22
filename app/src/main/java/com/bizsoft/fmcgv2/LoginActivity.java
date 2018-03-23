@@ -167,7 +167,14 @@ public class LoginActivity extends AppCompatActivity {
                 }
                 else
                 {
-                    String baseUrl  = "http://"+domain+"/fmcg/";
+                    String baseUrl = "";
+                    if(Store.getInstance().urlType.contains("full")) {
+                        baseUrl = "http://" + domain + "/";
+                    }
+                    else
+                    {
+                        baseUrl = "http://" + domain + "/";
+                    }
                     System.out.println("Base URL = "+baseUrl);
                     boolean s = Patterns.WEB_URL.matcher(baseUrl).matches();
                     if(!s)
@@ -180,7 +187,14 @@ public class LoginActivity extends AppCompatActivity {
                         System.out.println("Domain b= "+ Store.getInstance().domain);
                         Store.getInstance().domain = domain;
                         System.out.println("Domain a= "+ Store.getInstance().domain);
-                        Store.getInstance().baseUrl = "http://"+ Store.getInstance().domain+"/fmcg/";
+
+                        if(Store.getInstance().urlType.contains("full")) {
+                            Store.getInstance().baseUrl = "http://" + domain + "/";
+                        }
+                        else
+                        {
+                            Store.getInstance().baseUrl = "http://" + domain + "/";
+                        }
                         System.out.println("Base URL= "+ Store.getInstance().baseUrl);
                     }
 
@@ -561,15 +575,16 @@ public class LoginActivity extends AppCompatActivity {
                     try
                     {
 
-                        Store.getInstance().user.SalRefCode ="0000A";
-                        Store.getInstance().user.SRRefCode="0000B";
-                        Store.getInstance().user.SORefCode="0000C";
+                      //  Store.getInstance().user.SalRefCode ="0000A";
+                      //  Store.getInstance().user.SRRefCode="0000B";
+                      //  Store.getInstance().user.SORefCode="0000C";
 
                     }
                     catch (Exception e)
                     {
                         System.out.println("Exception e :"+e);
                     }
+                    finish();
                     Intent intent = new Intent(context,DownloadDataActivity.class);
                     startActivity(intent);
 

@@ -34,8 +34,11 @@ import com.bizsoft.fmcgv2.service.BizUtils;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
@@ -121,8 +124,6 @@ public class ReceiptActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
 
-
-
                 if(validate())
                 {
 
@@ -140,17 +141,12 @@ public class ReceiptActivity extends AppCompatActivity {
 
                 receipt.setAmount(x);
                 if (currentCustomer.getId() != null) {
-                    receipt.setLegerId(currentCustomer.getId());
+                    receipt.setLegerId(currentCustomer.getLedger().getId());
                 }
                 receipt.setPaymentMode(paymentModeValue);
 
-
-
                     if(paymentModeValue.toLowerCase().contains("cheque"))
                     {
-
-
-
                         receipt.setChequeNo(chequeNo.getText().toString());
                         receipt.setChequeDate(chequeDate.getText().toString());
                         receipt.setChequeBankName(bankName.getText().toString());
@@ -162,10 +158,21 @@ public class ReceiptActivity extends AppCompatActivity {
                         receipt.setChequeBankName("null");
                     }
 
+
+
+
                 Store.getInstance().receipts.add(receipt);
+
                 currentCustomer.getReceipts().add(receipt);
 
+                //Saving to local storage as JSON
+                    try {
+                        BizUtils.storeAsJSON("customerList",BizUtils.getJSON("customer",Store.getInstance().customerList));
+                        System.out.println("DB Updated..on local storage");
+                    } catch (ClassNotFoundException e) {
 
+                        System.err.println("Unable to write to DB");
+                    }
 
                 Toast.makeText(ReceiptActivity.this, "Saved...", Toast.LENGTH_SHORT).show();
 
@@ -321,6 +328,7 @@ public class ReceiptActivity extends AppCompatActivity {
         chequeDate.setText("");
         bankName.setText("");
 
+        Toast.makeText(this, "Receipt Saved.", Toast.LENGTH_SHORT).show();
 
         print();
 
@@ -331,14 +339,18 @@ public class ReceiptActivity extends AppCompatActivity {
     public void setCustomerSpinner()
     {
         final List<String> genderList = new ArrayList<String>();
-
-
         final ArrayList<Customer> customerList = Store.getInstance().customerList;
-
-
         for(int i=0;i<customerList.size();i++)
         {
-            genderList.add(customerList.get(i).getId()+" - "+customerList.get(i).getLedgerName());
+            if(customerList.get(i).getId()==null)
+            {
+                genderList.add("Unsaved"+" - "+customerList.get(i).getLedger().getLedgerName());
+            }
+            else
+            {
+                genderList.add(customerList.get(i).getId()+" - "+customerList.get(i).getLedger().getLedgerName());
+            }
+
         }
 
         ArrayAdapter<String> dataAdapter = new ArrayAdapter <String>(ReceiptActivity.this, android.R.layout.simple_spinner_item, genderList);
@@ -358,14 +370,14 @@ public class ReceiptActivity extends AppCompatActivity {
 
                 System.out.println("Ope");
                 double tmp = 0;
-                System.out.println("currentCustomer.getOPBal()"+currentCustomer.getOPBal());
-                if(currentCustomer.getOPBal()==null)
+                System.out.println("currentcustomer.getLedger().getOPBal()"+currentCustomer.getLedger().getOPBal());
+                if(currentCustomer.getLedger().getOPBal()==null)
                 {
                     tmp = 0;
                 }
                 else
                 {
-                    tmp= currentCustomer.getOPBal();
+                    tmp= currentCustomer.getLedger().getOPBal();
                 }
 
                 openingBalanceValue = tmp;
@@ -384,14 +396,14 @@ public class ReceiptActivity extends AppCompatActivity {
 
 
                 double tmp = 0;
-                System.out.println("currentCustomer.getOPBal()"+currentCustomer.getOPBal());
-                if(currentCustomer.getOPBal()==null)
+                System.out.println("currentcustomer.getLedger().getOPBal()"+currentCustomer.getLedger().getOPBal());
+                if(currentCustomer.getLedger().getOPBal()==null)
                 {
                     tmp = 0;
                 }
                 else
                 {
-                    tmp= currentCustomer.getOPBal();
+                    tmp= currentCustomer.getLedger().getOPBal();
                 }
 
                 openingBalanceValue = tmp;
@@ -402,26 +414,16 @@ public class ReceiptActivity extends AppCompatActivity {
                 outStandingAmount.setText(String.valueOf(String.format("%.2f",openingBalanceValue)));
             }
 
-
-
-
         });
-
-
 
     }
     public void setPaymentMode()
     {
 
-
         final ArrayList<String> genderList = new ArrayList<String>();
         genderList.add("Cash");
         genderList.add("Cheque");
-
-
-
-
-        // Drop down layout style - list view with radio button
+     // Drop down layout style - list view with radio button
         CustomSpinnerAdapter customSpinnerAdapter=new CustomSpinnerAdapter(ReceiptActivity.this,genderList);
         paymentModeSpinner.setAdapter(customSpinnerAdapter);
 
@@ -432,17 +434,7 @@ public class ReceiptActivity extends AppCompatActivity {
                 paymentModeValue = genderList.get(position);
                 if(paymentModeValue.contains("PNT") || paymentModeValue.toLowerCase().contains("cheque") )
                 {
-
-
-
-
-
-
-
-
-
-
-                    if(paymentModeValue.toLowerCase().contains("cheque"))
+                   if(paymentModeValue.toLowerCase().contains("cheque"))
                     {
                         System.out.println("showing chq no ...");
                         cn.setVisibility(View.VISIBLE);
@@ -465,15 +457,10 @@ public class ReceiptActivity extends AppCompatActivity {
                         dateChooser.setVisibility(View.GONE);
 
                     }
-
-
                 }
                 else
                 {
                     System.out.println("cash mode hiding chq no ...");
-
-
-
                     cn.setVisibility(View.GONE);
                     chequeNo.setVisibility(View.GONE);
                     bnl.setVisibility(View.GONE);
@@ -487,7 +474,6 @@ public class ReceiptActivity extends AppCompatActivity {
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
                 paymentModeValue = genderList.get(0);
-
 
 
             }
@@ -531,6 +517,7 @@ public class ReceiptActivity extends AppCompatActivity {
 
     public void print(Customer customer)
     {
+
         SharedPreferences prefs = getSharedPreferences(Store.getInstance().MyPREFERENCES, MODE_PRIVATE);
         BTPrint.SetAlign(Paint.Align.CENTER);
         BTPrint.PrintTextLine(prefs.getString(getString(R.string.companyName), "Aboorvass"));
@@ -555,11 +542,10 @@ public class ReceiptActivity extends AppCompatActivity {
         BizUtils bizUtils = new BizUtils();
         BTPrint.PrintTextLine("Bill ID :"+String.valueOf(Store.getInstance().companyID+"-"+ Store.getInstance().dealerId+"-"+customer.getId()));
         BTPrint.PrintTextLine("Bill Date :"+bizUtils.getCurrentTime());
-
         BTPrint.PrintTextLine("------------------------------");
         Customer customer1 = Store.getInstance().customerList.get(Store.getInstance().currentCustomerPosition);
 
-
+        Receipt receipt = customer1.getReceipts().get(customer1.getReceipts().size()-1);
         if(customer1.getId()==null)
         {
             BTPrint.PrintTextLine("Customer ID :"+"Unregistered");
@@ -569,27 +555,22 @@ public class ReceiptActivity extends AppCompatActivity {
             BTPrint.PrintTextLine("Customer ID :"+customer1.getId());
         }
 
-        BTPrint.PrintTextLine("Customer Name :"+customer1.getLedgerName());
-        BTPrint.PrintTextLine("Person In Charge :"+customer1.getPersonIncharge());
-        BTPrint.PrintTextLine("GST No :"+customer1.getGSTNo());
 
-
+        BTPrint.PrintTextLine("Customer Name :"+customer1.getLedger().getLedgerName());
+        BTPrint.PrintTextLine("Person In Charge :"+customer1.getLedger().getPersonIncharge());
+        BTPrint.PrintTextLine("GST No :"+customer1.getLedger().getGSTNo());
         BTPrint.PrintTextLine("------------------------------");
-
-
         BTPrint.SetAlign(Paint.Align.CENTER);
         BTPrint.PrintTextLine("***RECEIPT DETAILS***");
         BTPrint.PrintTextLine("------------------------------");
         BTPrint.SetAlign(Paint.Align.LEFT);
-        BTPrint.PrintTextLine("Payment Mode :"+paymentModeValue);
-        BTPrint.PrintTextLine("Received   : RM "+x);
-        BTPrint.PrintTextLine("Outstanding: RM "+outStandingAmountValue);
+        BTPrint.PrintTextLine("Payment Mode :"+receipt.getPaymentMode());
 
 
+        BTPrint.PrintTextLine("Received     : RM "+String.format("%.2f",customer1.getLedger().getOPBal()));
+        BTPrint.PrintTextLine("Received     : RM "+String.format("%.2f",receipt.getAmount()));
 
-
-
-
+        BTPrint.PrintTextLine("Outstanding  : RM "+ String.format("%.2f",(customer1.getLedger().getOPBal()- receipt.getAmount())));
         BTPrint.PrintTextLine("------------------------------");
         BTPrint.SetAlign(Paint.Align.CENTER);
         BTPrint.PrintTextLine("*****THANK YOU*****");
@@ -599,7 +580,6 @@ public class ReceiptActivity extends AppCompatActivity {
         BTPrint.PrintTextLine("------------------------------");
         BTPrint.SetAlign(Paint.Align.CENTER);
         BTPrint.PrintTextLine("Powered By Denariu Soft SDN BHD");
-
         BTPrint.printLineFeed();
 
 
@@ -664,8 +644,6 @@ public class ReceiptActivity extends AppCompatActivity {
             String date = (arg2+1)+"/"+arg3+"/"+arg1;
 
                 chequeDate.setText(String.valueOf(date));
-
-
             Toast.makeText(ReceiptActivity.this, date, Toast.LENGTH_SHORT).show();
         }
     };

@@ -23,18 +23,24 @@ import android.widget.Toast;
 import com.bizsoft.fmcgv2.adapter.ReportAdapter;
 import com.bizsoft.fmcgv2.dataobject.Product;
 import com.bizsoft.fmcgv2.dataobject.ReportData;
+import com.bizsoft.fmcgv2.dataobject.Sale;
 import com.bizsoft.fmcgv2.dataobject.Store;
 import com.bizsoft.fmcgv2.service.BizUtils;
 import com.bizsoft.fmcgv2.service.HttpHandler;
+import com.bizsoft.fmcgv2.service.SignalRService;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 
 import java.lang.reflect.Type;
 import java.math.RoundingMode;
+import java.text.DateFormat;
 import java.text.DecimalFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
@@ -80,6 +86,8 @@ public class ReportActivity extends AppCompatActivity {
 
 
 
+
+
         reportFor = (Spinner) findViewById(R.id.report_for);
         reportType = (Spinner) findViewById(R.id.report_type);
         listview = (ListView) findViewById(R.id.listview);
@@ -120,8 +128,6 @@ public class ReportActivity extends AppCompatActivity {
 
 
 
-        new GetReport(ReportActivity.this,reportUrl, Store.getInstance().fromDate, Store.getInstance().toDate).execute();
-
         fromDateButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -130,7 +136,6 @@ public class ReportActivity extends AppCompatActivity {
                 showDialog(999);
             }
         });
-
         toDateButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -140,7 +145,6 @@ public class ReportActivity extends AppCompatActivity {
 
             }
         });
-
 
         customSearch.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -172,7 +176,7 @@ public class ReportActivity extends AppCompatActivity {
             // arg1 = year
             // arg2 = month
             // arg3 = day
-            String date = (arg2+1)+"/"+arg3+"/"+arg1;
+            String date = arg3+"/"+(arg2+1)+"/"+arg1;
             if(FLAG_DATE.compareToIgnoreCase("fromdate")==0)
             {
                 fromDate.setText(String.valueOf(date));
@@ -309,7 +313,7 @@ public class ReportActivity extends AppCompatActivity {
                 toDate.setText("");
 
 
-                new GetReport(ReportActivity.this,reportUrl, Store.getInstance().fromDate, Store.getInstance().toDate).execute();
+               new GetReport(ReportActivity.this,reportUrl, Store.getInstance().fromDate, Store.getInstance().toDate).execute();
 
 
 
@@ -343,7 +347,7 @@ public class ReportActivity extends AppCompatActivity {
         HashMap<String,String> params = new HashMap<>();
         String fromDate;
         String toDate;
-        private ProgressDialog pdia;
+      //  private ProgressDialog pdia;
 
         public GetReport(Context context, String url, String fromDate,String toDate) {
             this.context = context;
@@ -360,16 +364,51 @@ public class ReportActivity extends AppCompatActivity {
             this.params.put("DealerId", String.valueOf(Store.getInstance().dealerId));
             this.params.put("DateFrom", String.valueOf(map.get("fromDate")));
             this.params.put("DateTo", String.valueOf(map.get("toDate")));
-            pdia = new ProgressDialog(context);
-            pdia.setMessage("Generating report...");
-            pdia.show();
+           // pdia = new ProgressDialog(context);
+         //   pdia.setMessage("Generating report...");
+         //   pdia.show();
 
         }
         @Override
         protected Object doInBackground(Object[] params) {
-
             HttpHandler httpHandler = new HttpHandler();
+
+
             response = httpHandler.makeServiceCall(this.url,this.params);
+
+            String fromDateStr = String.valueOf(map.get("fromDate")) +" 00:00:00";;
+
+            String toDateStr =   String.valueOf(map.get("toDate"))+" 23:59:59";;
+
+
+            DateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy");
+            Date fromDate = null;
+            Date toDate = null;
+            try {
+                 fromDate = dateFormat.parse(fromDateStr);
+                 toDate = dateFormat.parse(toDateStr);
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+
+
+            System.out.println("SD ==================="+fromDate);
+            System.out.println("ED ==================="+toDate);
+
+
+            if(reportBaseUrl.contains("return")) {
+
+            }
+            else if(reportBaseUrl.contains("sale")) {
+
+                Store.getInstance().saleList.clear();
+                SignalRService.saleList(null, null, fromDate, toDate, null, 0, 9999999);
+            }
+
+       //  new GetReport(ReportActivity.this,reportUrl, Store.getInstance().fromDate, Store.getInstance().toDate).execute();
+
+
+
             return true;
         }
         @Override
@@ -379,7 +418,7 @@ public class ReportActivity extends AppCompatActivity {
 
 
 
-            pdia.dismiss();
+           // pdia.dismiss();
 
             if(response!=null)
             {
@@ -396,34 +435,87 @@ public class ReportActivity extends AppCompatActivity {
 
 
 
-                Store.getInstance().reportData = (ReportData) collection;            }
-            double total = 0;
-            if(Store.getInstance().reportData.Datas!=null) {
-                productReportList.clear();
-                productReportList.addAll(Store.getInstance().reportData.Datas);
+                Store.getInstance().reportData = (ReportData) collection;
+                double total = 0;
+                if(Store.getInstance().reportData.Datas!=null) {
+                    productReportList.clear();
+                    productReportList.addAll(Store.getInstance().reportData.Datas);
 
-                for(int i=0;i<productReportList.size();i++)
-                {
-                    total = total +productReportList.get(i).getAmount();
+                    for(int i=0;i<productReportList.size();i++)
+                    {
+                        total = total +productReportList.get(i).getAmount();
+                    }
                 }
+
+                System.out.println("Size === "+ Store.getInstance().saleList.size());
+
+                if(Store.getInstance().saleList!=null)
+                {
+                    if(Store.getInstance().saleList.size()>0)
+                    {
+                        if(reportUrl.toLowerCase().contains("customer"))
+                        {
+                           HashMap<Long,ArrayList<com.bizsoft.fmcgv2.Tables.Sale>> customerReport = new HashMap<Long,ArrayList<com.bizsoft.fmcgv2.Tables.Sale>>();
+                            HashMap<Long,ArrayList<com.bizsoft.fmcgv2.Tables.Sale>> productReport = new HashMap<Long,ArrayList<com.bizsoft.fmcgv2.Tables.Sale>>();
+
+                           for(int i=0;i<Store.getInstance().saleList.size();i++)
+                           {
+                               for(int j=0;j<Store.getInstance().customerList.size();j++)
+                               {
+                                   if(Store.getInstance().customerList.get(j).getLedger().getId() == Store.getInstance().saleList.get(i).getLedgerId())
+                                   {
+                                       if(customerReport.containsKey(Store.getInstance().customerList.get(j).getLedger().getId()))
+                                       {
+                                            customerReport.get(Store.getInstance().customerList.get(j).getLedger().getId()).add(Store.getInstance().saleList.get(i));
+                                       }
+                                       else
+                                       {
+                                           ArrayList<com.bizsoft.fmcgv2.Tables.Sale> sales = new ArrayList<com.bizsoft.fmcgv2.Tables.Sale>();
+                                           sales.add(Store.getInstance().saleList.get(i));
+                                           customerReport.put(Store.getInstance().customerList.get(j).getLedger().getId(),sales);
+                                       }
+
+                                   }
+
+                               }
+
+
+                           }
+                            System.out.println("Customer Size ===="+customerReport.size());
+                        }
+                        else
+                        {
+
+                        }
+
+
+
+                    }
+                    else
+                    {
+                        Toast.makeText(context, "No Data found...", Toast.LENGTH_SHORT).show();
+
+                        reportAdapter.notifyDataSetChanged();
+                    }
+                }
+
+
+
+
+
+                if(reportUrl.toLowerCase().contains("customer"))
+                {
+                    label.setText(String.valueOf("Customer Name"));
+                }
+                else
+                {
+                    label.setText(String.valueOf("Product Name"));
+                }
+                grandTotal.setText(String.valueOf(String.format("%.2f",total)));
+                reportAdapter.notifyDataSetChanged();
+
             }
 
-            System.out.println("Size === "+ Store.getInstance().reportData.Datas.size());
-
-            if(reportUrl.toLowerCase().contains("customer"))
-            {
-
-                label.setText(String.valueOf("Customer Name"));
-            }
-            else
-            {
-
-                label.setText(String.valueOf("Product Name"));
-            }
-
-
-            grandTotal.setText(String.valueOf(String.format("%.2f",total)));
-            reportAdapter.notifyDataSetChanged();
 
         }
 
